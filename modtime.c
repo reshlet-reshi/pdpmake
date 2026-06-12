@@ -1,8 +1,7 @@
 /*
  * Get modification time of file or archive member
  */
-#include "make.h"
-#include <ar.h>
+#include "make_m2.h"
 
 /*
  * Read a number from an archive header.
@@ -40,7 +39,7 @@ arsearch(FILE *fd, const char *member)
  top:
 		len = fread(&hdr, 1, sizeof(hdr), fd);
 		if (len < sizeof(hdr) ||
-				memcmp(hdr.ar_fmag, ARFMAG, sizeof(hdr.ar_fmag)) != 0) {
+				memcmp(hdr.ar_fmag, ARFMAG, AR_FMAG_LEN) != 0) {
 			if (feof(fd))
 				break;
 			error("invalid archive");
@@ -48,7 +47,7 @@ arsearch(FILE *fd, const char *member)
 
 		// Get length of this member.  Length in the file is padded
 		// to an even number of bytes.
-		len = argetnum(hdr.ar_size, sizeof(hdr.ar_size));
+		len = argetnum(hdr.ar_size, AR_SIZE_LEN);
 		if (len % 2 == 1)
 			len++;
 
@@ -71,7 +70,7 @@ arsearch(FILE *fd, const char *member)
 				goto top;
 			} else if (isdigit(hdr.ar_name[1]) && names) {
 				// An extended filename, get its offset in the names list
-				offset = argetnum(hdr.ar_name + 1, sizeof(hdr.ar_name) - 1);
+				offset = argetnum(hdr.ar_name + 1, AR_NAME_LEN - 1);
 				if (offset > max_offset)
 					error("invalid archive");
 				t = names + offset;
@@ -86,7 +85,7 @@ arsearch(FILE *fd, const char *member)
 		*s = '\0';
 
 		if (strcmp(t, member) == 0) {
-			mtime = argetnum(hdr.ar_date, sizeof(hdr.ar_date));
+			mtime = argetnum(hdr.ar_date, AR_DATE_LEN);
 			break;
 		}
 	} while (fseek(fd, len, SEEK_CUR) == 0);
@@ -160,8 +159,8 @@ modtime(struct name *np)
 		np->n_tim.tv_sec = artime(name, member);
 		np->n_tim.tv_nsec = 0;
 	} else if (stat(name, &info) < 0) {
-		if (errno != ENOENT)
-			error("can't open %s: %s", name, strerror(errno));
+		if (PDPMAKE_ERRNO != ENOENT)
+			error("can't open %s: %s", name, strerror(PDPMAKE_ERRNO));
 		np->n_tim.tv_sec = 0;
 		np->n_tim.tv_nsec = 0;
 	} else {

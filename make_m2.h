@@ -14,6 +14,53 @@ typedef unsigned short uint16_t;
 #define NULL 0
 #define TRUE 1
 #define FALSE 0
+#define INT_MAX 2147483647
+#define ENOENT 2
+
+#if !defined(__M2__)
+#ifndef _XOPEN_SOURCE
+#define _XOPEN_SOURCE 700
+#endif
+#include <stddef.h>
+#include <sys/stat.h>
+#else
+typedef unsigned long size_t;
+typedef long time_t;
+
+struct timespec {
+	long tv_sec;
+	long tv_nsec;
+};
+
+struct stat {
+	struct timespec st_mtim;
+};
+#endif
+
+typedef struct __IO_FILE FILE;
+
+#define ARMAG "!<arch>\n"
+#define SARMAG 8
+#define ARFMAG "`\n"
+#define AR_NAME_LEN 16
+#define AR_DATE_LEN 12
+#define AR_UID_LEN 6
+#define AR_GID_LEN 6
+#define AR_MODE_LEN 8
+#define AR_SIZE_LEN 10
+#define AR_FMAG_LEN 2
+
+#define SEEK_CUR 1
+
+struct ar_hdr {
+	char ar_name[AR_NAME_LEN];
+	char ar_date[AR_DATE_LEN];
+	char ar_uid[AR_UID_LEN];
+	char ar_gid[AR_GID_LEN];
+	char ar_mode[AR_MODE_LEN];
+	char ar_size[AR_SIZE_LEN];
+	char ar_fmag[AR_FMAG_LEN];
+};
 
 #define STD_POSIX_2017 0
 #define STD_POSIX_2024 1
@@ -36,16 +83,34 @@ typedef unsigned short uint16_t;
 #define POSIX_2017 FALSE
 #endif
 
-struct timespec {
-	long tv_sec;
-	long tv_nsec;
-};
-
 int printf(const char *format, ...);
 int putchar(int c);
 void free(void *ptr);
 int strcmp(const char *s1, const char *s2);
-void *xmalloc(unsigned len);
+size_t strlen(const char *str);
+char *strchr(const char *str, int ch);
+int memcmp(const void *s1, const void *s2, size_t n);
+char *strerror(int errnum);
+FILE *fopen(const char *path, const char *mode);
+size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
+int feof(FILE *stream);
+int fseek(FILE *stream, long offset, int whence);
+int fclose(FILE *stream);
+#if defined(__M2__)
+extern int errno;
+int stat(const char *path, struct stat *buf);
+#define PDPMAKE_ERRNO errno
+#elif defined(__linux__)
+int *__errno_location(void);
+#define PDPMAKE_ERRNO (*__errno_location())
+#elif defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
+int *__error(void);
+#define PDPMAKE_ERRNO (*__error())
+#else
+extern int errno;
+#define PDPMAKE_ERRNO errno
+#endif
+void *xmalloc(size_t len);
 char *xstrdup(const char *s);
 unsigned int getbucket(const char *name);
 void error(const char *msg, ...);
@@ -73,6 +138,8 @@ pdpmake_isdigit(int c)
 {
 	return c >= '0' && c <= '9';
 }
+
+#define isdigit(c) pdpmake_isdigit(c)
 
 static int
 isblank(int c)
