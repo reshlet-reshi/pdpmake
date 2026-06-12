@@ -1,7 +1,7 @@
 /*
  * Utility functions.
  */
-#include "make.h"
+#include "make_m2.h"
 
 /*
  * Print message, with makefile and line number if possible.
@@ -151,7 +151,12 @@ xstrndup(const char *s, size_t n)
 char *
 xappendword(const char *str, const char *word)
 {
-	char *newstr = str ? xconcat3(str, " ", word) : xstrdup(word);
+	char *newstr;
+
+	if (str)
+		newstr = xconcat3(str, " ", word);
+	else
+		newstr = xstrdup(word);
 	free((void *)str);
 	return newstr;
 }
@@ -184,8 +189,9 @@ newfile(char *str, struct file *fphead)
 	if (fphead == NULL)
 		return fpnew;
 
-	for (fp = fphead; fp->f_next; fp = fp->f_next)
-		;
+	fp = fphead;
+	while (fp->f_next)
+		fp = fp->f_next;
 
 	fp->f_next = fpnew;
 

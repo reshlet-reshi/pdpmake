@@ -37,6 +37,8 @@ struct stat {
 };
 #endif
 
+#include <stdarg.h>
+
 typedef struct __IO_FILE FILE;
 
 #define ARMAG "!<arch>\n"
@@ -90,12 +92,22 @@ int strcmp(const char *s1, const char *s2);
 size_t strlen(const char *str);
 char *strchr(const char *str, int ch);
 int memcmp(const void *s1, const void *s2, size_t n);
+void *memcpy(void *dest, const void *src, size_t n);
 char *strerror(int errnum);
+extern FILE *stdout;
+extern FILE *stderr;
+int fprintf(FILE *stream, const char *format, ...);
+int vfprintf(FILE *stream, const char *format, va_list arg);
+int fputc(int c, FILE *stream);
 FILE *fopen(const char *path, const char *mode);
 size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 int feof(FILE *stream);
 int fseek(FILE *stream, long offset, int whence);
 int fclose(FILE *stream);
+void exit(int status);
+void *malloc(size_t size);
+void *realloc(void *ptr, size_t size);
+char *strndup(const char *s, size_t n);
 #if defined(__M2__)
 extern int errno;
 int stat(const char *path, struct stat *buf);
@@ -111,9 +123,18 @@ extern int errno;
 #define PDPMAKE_ERRNO errno
 #endif
 void *xmalloc(size_t len);
+void *xrealloc(void *ptr, size_t len);
+char *xconcat3(const char *s1, const char *s2, const char *s3);
 char *xstrdup(const char *s);
+char *xstrndup(const char *s, size_t n);
+char *xappendword(const char *str, const char *word);
 unsigned int getbucket(const char *name);
 void error(const char *msg, ...);
+void diagnostic(const char *msg, ...);
+void error_unexpected(const char *s);
+void error_in_inference_rule(const char *s);
+void error_not_allowed(const char *s, const char *t);
+void warning(const char *msg, ...);
 
 static int
 pdpmake_islower(int c)
@@ -261,11 +282,23 @@ struct macro {
 #endif
 };
 
+struct file {
+	struct file *f_next;
+	char *f_name;
+};
+
 extern struct name *namehead[HTABSIZE];
 extern struct macro *macrohead[HTABSIZE];
 extern struct name *firstname;
+extern const char *myname;
+extern const char *makefile;
+extern int dispno;
+extern struct cmd *curr_cmd;
 extern bool posix;
 extern unsigned char pragma;
 extern unsigned char posix_level;
+
+struct file *newfile(char *str, struct file *fphead);
+void freefiles(struct file *fp);
 
 #endif
