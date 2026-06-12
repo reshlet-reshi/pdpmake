@@ -1,7 +1,7 @@
 /*
  * Check structures for make.
  */
-#include "make.h"
+#include "make_m2.h"
 
 static void
 print_name(struct name *np)
