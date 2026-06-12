@@ -279,13 +279,15 @@ getrules(char *s, int size)
 	static const char *rulepos = NULL;
 	static int rule_idx = 0;
 
+	if (rule_idx == 0) {
+		rulevec = macros;
+		rule_idx++;
+	}
+
 	while (rulepos == NULL || *rulepos == '\0') {
 		if (rulevec != NULL && *rulevec != NULL) {
 			rulepos = *rulevec;
 			rulevec++;
-		} else if (rule_idx == 0) {
-			rulevec = macros;
-			rule_idx++;
 		} else if (rule_idx == 1) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 			if (POSIX_2017)
