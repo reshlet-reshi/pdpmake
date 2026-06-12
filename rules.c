@@ -190,69 +190,83 @@ dyndep(struct name *np, struct rule *infrule, const char **ptsuff)
 	return pp;
 }
 
-#define RULES \
-	".c.o:\n" \
-	"	$(CC) $(CFLAGS) -c $<\n" \
-	".y.o:\n" \
-	"	$(YACC) $(YFLAGS) $<\n" \
-	"	$(CC) $(CFLAGS) -c y.tab.c\n" \
-	"	rm -f y.tab.c\n" \
-	"	mv y.tab.o $@\n" \
-	".y.c:\n" \
-	"	$(YACC) $(YFLAGS) $<\n" \
-	"	mv y.tab.c $@\n" \
-	".l.o:\n" \
-	"	$(LEX) $(LFLAGS) $<\n" \
-	"	$(CC) $(CFLAGS) -c lex.yy.c\n" \
-	"	rm -f lex.yy.c\n" \
-	"	mv lex.yy.o $@\n" \
-	".l.c:\n" \
-	"	$(LEX) $(LFLAGS) $<\n" \
-	"	mv lex.yy.c $@\n" \
-	".c.a:\n" \
-	"	$(CC) -c $(CFLAGS) $<\n" \
-	"	$(AR) $(ARFLAGS) $@ $*.o\n" \
-	"	rm -f $*.o\n" \
-	".c:\n" \
-	"	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<\n" \
-	".sh:\n" \
-	"	cp $< $@\n" \
-	"	chmod a+x $@\n"
+static const char *rules[] = {
+	".c.o:\n",
+	"	$(CC) $(CFLAGS) -c $<\n",
+	".y.o:\n",
+	"	$(YACC) $(YFLAGS) $<\n",
+	"	$(CC) $(CFLAGS) -c y.tab.c\n",
+	"	rm -f y.tab.c\n",
+	"	mv y.tab.o $@\n",
+	".y.c:\n",
+	"	$(YACC) $(YFLAGS) $<\n",
+	"	mv y.tab.c $@\n",
+	".l.o:\n",
+	"	$(LEX) $(LFLAGS) $<\n",
+	"	$(CC) $(CFLAGS) -c lex.yy.c\n",
+	"	rm -f lex.yy.c\n",
+	"	mv lex.yy.o $@\n",
+	".l.c:\n",
+	"	$(LEX) $(LFLAGS) $<\n",
+	"	mv lex.yy.c $@\n",
+	".c.a:\n",
+	"	$(CC) -c $(CFLAGS) $<\n",
+	"	$(AR) $(ARFLAGS) $@ $*.o\n",
+	"	rm -f $*.o\n",
+	".c:\n",
+	"	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $<\n",
+	".sh:\n",
+	"	cp $< $@\n",
+	"	chmod a+x $@\n",
+	NULL
+};
 
-#define RULES_2017 \
-	".SUFFIXES:.o .c .y .l .a .sh .f\n" \
-	".f.o:\n" \
-	"	$(FC) $(FFLAGS) -c $<\n" \
-	".f.a:\n" \
-	"	$(FC) -c $(FFLAGS) $<\n" \
-	"	$(AR) $(ARFLAGS) $@ $*.o\n" \
-	"	rm -f $*.o\n" \
-	".f:\n" \
-	"	$(FC) $(FFLAGS) $(LDFLAGS) -o $@ $<\n"
+static const char *rules_2017[] = {
+	".SUFFIXES:.o .c .y .l .a .sh .f\n",
+	".f.o:\n",
+	"	$(FC) $(FFLAGS) -c $<\n",
+	".f.a:\n",
+	"	$(FC) -c $(FFLAGS) $<\n",
+	"	$(AR) $(ARFLAGS) $@ $*.o\n",
+	"	rm -f $*.o\n",
+	".f:\n",
+	"	$(FC) $(FFLAGS) $(LDFLAGS) -o $@ $<\n",
+	NULL
+};
 
-#define RULES_2024 \
-	".SUFFIXES:.o .c .y .l .a .sh\n"
+static const char *rules_2024[] = {
+	".SUFFIXES:.o .c .y .l .a .sh\n",
+	NULL
+};
 
-#define MACROS \
-	"CFLAGS=-O1\n" \
-	"YACC=yacc\n" \
-	"YFLAGS=\n" \
-	"LEX=lex\n" \
-	"LFLAGS=\n" \
-	"AR=ar\n" \
-	"ARFLAGS=-rv\n" \
-	"LDFLAGS=\n"
+static const char *macros[] = {
+	"CFLAGS=-O1\n",
+	"YACC=yacc\n",
+	"YFLAGS=\n",
+	"LEX=lex\n",
+	"LFLAGS=\n",
+	"AR=ar\n",
+	"ARFLAGS=-rv\n",
+	"LDFLAGS=\n",
+	NULL
+};
 
-#define MACROS_2017 \
-	"CC=c99\n" \
-	"FC=fort77\n" \
-	"FFLAGS=-O1\n" \
+static const char *macros_2017[] = {
+	"CC=c99\n",
+	"FC=fort77\n",
+	"FFLAGS=-O1\n",
+	NULL
+};
 
-#define MACROS_2024 \
-	"CC=c17\n"
+static const char *macros_2024[] = {
+	"CC=c17\n",
+	NULL
+};
 
-#define MACROS_EXT \
-	"CC=cc\n"
+static const char *macros_ext[] = {
+	"CC=cc\n",
+	NULL
+};
 
 /*
  * Read the built-in rules using a fake fgets-like interface.
@@ -261,46 +275,51 @@ char *
 getrules(char *s, int size)
 {
 	char *r = s;
+	static const char **rulevec = NULL;
 	static const char *rulepos = NULL;
 	static int rule_idx = 0;
 
-	if (rulepos == NULL || *rulepos == '\0') {
-		if (rule_idx == 0) {
-			rulepos = MACROS;
+	while (rulepos == NULL || *rulepos == '\0') {
+		if (rulevec != NULL && *rulevec != NULL) {
+			rulepos = *rulevec;
+			rulevec++;
+		} else if (rule_idx == 0) {
+			rulevec = macros;
 			rule_idx++;
 		} else if (rule_idx == 1) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 			if (POSIX_2017)
-				rulepos = MACROS_2017;
+				rulevec = macros_2017;
 			else if (posix)
-				rulepos = MACROS_2024;
+				rulevec = macros_2024;
 			else
-				rulepos = MACROS_EXT;
+				rulevec = macros_ext;
 #elif ENABLE_FEATURE_MAKE_POSIX_2024
-			rulepos = MACROS_2024;
+			rulevec = macros_2024;
 #else
-			rulepos = MACROS_2017;
+			rulevec = macros_2017;
 #endif
 			rule_idx++;
 		} else if (!norules) {
 			if (rule_idx == 2) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-				rulepos = POSIX_2017 ? RULES_2017 : RULES_2024;
+				rulevec = POSIX_2017 ? rules_2017 : rules_2024;
 #elif ENABLE_FEATURE_MAKE_POSIX_2024
-				rulepos = RULES_2024;
+				rulevec = rules_2024;
 #else
-				rulepos = RULES_2017;
+				rulevec = rules_2017;
 #endif
 				rule_idx++;
 			} else if (rule_idx == 3) {
-				rulepos = RULES;
+				rulevec = rules;
 				rule_idx++;
+			} else {
+				return NULL;
 			}
+		} else {
+			return NULL;
 		}
 	}
-
-	if (*rulepos == '\0')
-		return NULL;
 
 	while (--size) {
 		if ((*r++ = *rulepos++) == '\n')
