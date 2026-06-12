@@ -10,13 +10,14 @@ OBJS = check.o input.o macro.o main.o make.o modtime.o rules.o target.o utils.o
 M2_CC = ../stage0-posix/AMD64/bin/M2-Mesoplanet
 M2_BINDIR = ../stage0-posix/AMD64/bin
 M2LIBC_PATH = ../stage0-posix/M2-Mesoplanet/M2libc
-M2_OBJS = check.m2.o
+M2_OBJS = check.m2.o macro.m2.o
 
 make: $(OBJS)
 	$(CC) $(LDFLAGS) -o make $(OBJS)
 
 $(OBJS): make.h
 check.o: make_m2.h
+macro.o: make_m2.h
 
 install: make
 	test -d $(DESTDIR)$(BINDIR) || mkdir -p $(DESTDIR)$(BINDIR)
@@ -35,6 +36,9 @@ m2-check: $(M2_OBJS)
 
 check.m2.o: check.c make_m2.h
 	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f check.c -o $@
+
+macro.m2.o: macro.c make_m2.h
+	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f macro.c -o $@
 
 clean:
 	rm -f $(OBJS) $(M2_OBJS) make
