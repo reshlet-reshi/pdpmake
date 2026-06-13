@@ -160,6 +160,7 @@ int puts(const char *s);
 int fflush(FILE *stream);
 void free(void *ptr);
 int strcmp(const char *s1, const char *s2);
+int strncmp(const char *s1, const char *s2, size_t n);
 size_t strlen(const char *str);
 char *strcpy(char *dest, const char *src);
 char *stpcpy(char *dest, const char *src);
@@ -350,6 +351,14 @@ pdpmake_wtermsig(int status)
 #endif
 #define N_INFERENCE 0x400
 #define HTABSIZE 199
+
+#define T_NORMAL 0
+#define T_SPECIAL 0x01
+#define T_INFERENCE 0x02
+#define T_NOPREREQ 0x04
+#define T_COMMAND 0x08
+#define T_SPECIAL_NOPREREQ 0x05
+#define T_SPECIAL_NOPREREQ_COMMAND 0x0d
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 #define OPTSTR1 "+ehij:knqrsSt"
@@ -629,6 +638,7 @@ char *splitlib(const char *name, char **member);
 void modtime(struct name *np);
 char *suffix(const char *name);
 char *has_suffix(const char *name, const char *suffix);
+int target_type(char *s);
 struct name *dyndep(struct name *np, struct rule *infrule, const char **ptsuff);
 struct name *findname(const char *name);
 struct name *newname(const char *name);
@@ -651,6 +661,7 @@ char *gettok(char **ptr);
 char *skip_macro(const char *s);
 void setmacro(const char *name, const char *val, int level);
 const char *is_suffix(const char *s);
+int ends_with_bracket(const char *s);
 int skip_line(const char *str1);
 void pragmas_from_env(void);
 uint32_t process_options(int argc, char **argv, int from_env);

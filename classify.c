@@ -1,4 +1,16 @@
-#include "make.h"
+#include "make_m2.h"
+
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+#define SPECIAL_TARGET_COUNT 10
+#else
+#define SPECIAL_TARGET_COUNT 7
+#endif
+#elif ENABLE_FEATURE_MAKE_POSIX_2024
+#define SPECIAL_TARGET_COUNT 9
+#else
+#define SPECIAL_TARGET_COUNT 6
+#endif
 
 /*
  * Return a pointer to the suffix name if the argument is a known suffix
@@ -82,16 +94,16 @@ target_type(char *s)
 	};
 
 	static const uint8_t s_type[] = {
-		T_SPECIAL | T_NOPREREQ | T_COMMAND,
-		T_SPECIAL | T_NOPREREQ,
+		T_SPECIAL_NOPREREQ_COMMAND,
+		T_SPECIAL_NOPREREQ,
 		T_SPECIAL,
 		T_SPECIAL,
 		T_SPECIAL,
 		T_SPECIAL,
 #if ENABLE_FEATURE_MAKE_POSIX_2024
 		T_SPECIAL,
-		T_SPECIAL | T_NOPREREQ,
-		T_SPECIAL | T_NOPREREQ,
+		T_SPECIAL_NOPREREQ,
+		T_SPECIAL_NOPREREQ,
 #endif
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 		T_SPECIAL,
@@ -99,7 +111,7 @@ target_type(char *s)
 	};
 
 	// Check for one of the known special targets
-	for (ret = 0; ret < sizeof(s_name)/sizeof(s_name[0]); ret++)
+	for (ret = 0; ret < SPECIAL_TARGET_COUNT; ret++)
 		if (strcmp(s_name[ret], s) == 0)
 			return s_type[ret];
 
