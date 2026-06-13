@@ -8,7 +8,8 @@ BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
 CC = c99
-OBJS = check.o classify.o command.o condition.o expand.o extensions.o input.o macro.o main.o make.o modtime.o options.o read.o rules.o runtime.o startup.o target.o utils.o
+SRCS != LC_ALL=C; export LC_ALL; printf '%s\n' *.c
+OBJS = $(SRCS:.c=.o)
 M2_CC = ../stage0-posix/AMD64/bin/M2-Mesoplanet
 M2_BINDIR = ../stage0-posix/AMD64/bin
 M2LIBC_PATH = ../stage0-posix/M2-Mesoplanet/M2libc
