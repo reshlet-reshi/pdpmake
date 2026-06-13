@@ -6,7 +6,7 @@ PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
-OBJS = check.o classify.o command.o extensions.o input.o macro.o main.o make.o modtime.o options.o read.o rules.o runtime.o startup.o target.o utils.o
+OBJS = check.o classify.o command.o condition.o extensions.o input.o macro.o main.o make.o modtime.o options.o read.o rules.o runtime.o startup.o target.o utils.o
 M2_CC = ../stage0-posix/AMD64/bin/M2-Mesoplanet
 M2_BINDIR = ../stage0-posix/AMD64/bin
 M2LIBC_PATH = ../stage0-posix/M2-Mesoplanet/M2libc
@@ -17,7 +17,7 @@ make: $(OBJS)
 
 $(OBJS): make.h
 check.o: make_m2.h
-input.o: input_expand.inc input_condition.inc
+input.o: input_expand.inc
 macro.o: make_m2.h
 main.o: make_m2.h
 make.o: make_m2.h

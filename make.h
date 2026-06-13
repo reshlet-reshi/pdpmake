@@ -318,6 +318,7 @@ extern char *numjobs;
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 extern bool posix;
 extern bool seen_first;
+extern uint8_t clevel;
 extern unsigned char pragma;
 extern unsigned char posix_level;
 #endif
@@ -343,6 +344,7 @@ char *get_shell(void);
 #endif
 char *expand_macros(const char *str, int except_dollar);
 void input(FILE *fd, int ilevel);
+void process_line(char *s);
 char *readline(FILE *fd, int want_command);
 char *process_command(char *s);
 #if ENABLE_FEATURE_MAKE_POSIX_2024
@@ -390,6 +392,7 @@ void freefiles(struct file *fp);
 int is_valid_target(const char *name);
 char *gettok(char **ptr);
 char *skip_macro(const char *s);
+char *find_char(const char *str, int c);
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 int skip_line(const char *str1);
 int ends_with_bracket(const char *s);

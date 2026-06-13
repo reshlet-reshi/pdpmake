@@ -1,7 +1,9 @@
+#include "make.h"
+
 /*
  * Process a non-command line
  */
-static void
+void
 process_line(char *s)
 {
 	char *t;
@@ -51,7 +53,7 @@ enum {
 
 #define IF_MAX 10
 
-static uint8_t clevel = 0;
+uint8_t clevel = 0;
 static uint8_t cstate[IF_MAX + 1] = {INITIAL};
 
 /*

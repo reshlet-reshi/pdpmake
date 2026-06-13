@@ -150,7 +150,7 @@ modify_words(const char *val, int modifier, size_t lenf, size_t lenr,
  * detected as separators in macro definitions.  Some other situations
  * also require skipping the internals of a macro expansion.
  */
-static char *
+char *
 find_char(const char *str, int c)
 {
 	const char *s;

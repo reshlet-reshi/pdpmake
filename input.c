@@ -8,7 +8,6 @@ int lineno;	// Physical line number in file
 int dispno;	// Line number for display purposes
 
 #include "input_expand.inc"
-#include "input_condition.inc"
 
 /*
  * Determine if a line is a target rule with an inline command.
