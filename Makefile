@@ -10,7 +10,7 @@ OBJS = check.o input.o macro.o main.o make.o modtime.o options.o rules.o runtime
 M2_CC = ../stage0-posix/AMD64/bin/M2-Mesoplanet
 M2_BINDIR = ../stage0-posix/AMD64/bin
 M2LIBC_PATH = ../stage0-posix/M2-Mesoplanet/M2libc
-M2_OBJS = check.m2.o macro.m2.o make.m2.o modtime.m2.o rules.m2.o runtime.m2.o startup.m2.o target.m2.o utils.m2.o
+M2_OBJS = check.m2.o macro.m2.o make.m2.o modtime.m2.o options.m2.o rules.m2.o runtime.m2.o startup.m2.o target.m2.o utils.m2.o
 
 make: $(OBJS)
 	$(CC) $(LDFLAGS) -o make $(OBJS)
@@ -20,6 +20,7 @@ check.o: make_m2.h
 macro.o: make_m2.h
 make.o: make_m2.h
 modtime.o: make_m2.h
+options.o: make_m2.h
 rules.o: make_m2.h
 runtime.o: make_m2.h
 startup.o: make_m2.h
@@ -52,6 +53,9 @@ make.m2.o: make.c make_m2.h
 
 modtime.m2.o: modtime.c make_m2.h
 	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f modtime.c -o $@
+
+options.m2.o: options.c make_m2.h
+	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f options.c -o $@
 
 rules.m2.o: rules.c make_m2.h
 	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f rules.c -o $@

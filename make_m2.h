@@ -141,6 +141,7 @@ char *strcpy(char *dest, const char *src);
 char *stpcpy(char *dest, const char *src);
 char *strchr(const char *str, int ch);
 char *strrchr(const char *str, int ch);
+size_t strspn(const char *s, const char *accept);
 int memcmp(const void *s1, const void *s2, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 char *strerror(int errnum);
@@ -163,6 +164,11 @@ int getpid(void);
 int utimensat(int fd, const char *path, const struct timespec times[2], int flag);
 int clock_gettime(int clk_id, struct timespec *tp);
 size_t confstr(int name, char *buf, size_t len);
+char *getenv(const char *name);
+int chdir(const char *path);
+int getopt(int argc, char **argv, const char *optstring);
+extern char *optarg;
+extern int optind;
 #if defined(__M2__)
 pdpmake_sighandler_t signal(int sig, pdpmake_sighandler_t func);
 int sigemptyset(sigset_t *set);
@@ -393,6 +399,23 @@ pdpmake_wtermsig(int status)
 #define OPT_make 0
 #endif
 
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+#define OPTSTR2 "pf:C:x:"
+#define OPTSTR "+ehij:knqrsStpf:C:x:"
+#elif ENABLE_FEATURE_MAKE_POSIX_2024
+#define OPTSTR2 "pf:"
+#define OPTSTR "+eij:knqrsStpf:"
+#else
+#define OPTSTR2 "pf:"
+#define OPTSTR "+eiknqrsStpf:"
+#endif
+
+#if defined(__GLIBC__) && ENABLE_FEATURE_MAKE_EXTENSIONS
+#define OPT_OFFSET + !posix
+#else
+#define OPT_OFFSET
+#endif
+
 #define OPT_MASK (~OPT_S)
 
 #define useenv (opts & OPT_e)
@@ -527,6 +550,7 @@ extern struct name *namehead[HTABSIZE];
 extern struct macro *macrohead[HTABSIZE];
 extern struct name *firstname;
 extern struct name *target;
+extern struct file *makefiles;
 extern uint32_t opts;
 extern const char *myname;
 extern const char *makefile;

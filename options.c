@@ -1,54 +1,79 @@
-#include "make.h"
+#include "make_m2.h"
 
 static void
 usage(int exit_code)
 {
-	FILE *fp = ENABLE_FEATURE_MAKE_EXTENSIONS && exit_code == 0 ?
-				stdout : stderr;
+	FILE *fp;
 
-	fprintf(fp,
-		"Usage: %s"
-		IF_FEATURE_MAKE_EXTENSIONS(" [--posix] [-C path]")
-		" [-f makefile]"
-		IF_FEATURE_MAKE_POSIX_2024(" [-j num]")
-		IF_FEATURE_MAKE_EXTENSIONS(" [-x pragma]")
-		IF_FEATURE_MAKE_EXTENSIONS("\n\t")
-		IF_NOT_FEATURE_MAKE_EXTENSIONS(" [-eiknpqrsSt] ")
-		IF_FEATURE_MAKE_EXTENSIONS(" [-ehiknpqrsSt] ")
-		IF_NOT_FEATURE_MAKE_POSIX_2024(
-			IF_FEATURE_MAKE_EXTENSIONS("[macro[:]=val ...]")
-			IF_NOT_FEATURE_MAKE_EXTENSIONS("[macro=val ...]")
-		)
-		IF_FEATURE_MAKE_POSIX_2024(
-			IF_FEATURE_MAKE_EXTENSIONS("[macro[:[:[:]]]=val ...]")
-			IF_NOT_FEATURE_MAKE_EXTENSIONS("[macro[::[:]]=val ...]")
-		)
-		" [target ...]\n", myname);
+	if (ENABLE_FEATURE_MAKE_EXTENSIONS && exit_code == 0)
+		fp = stdout;
+	else
+		fp = stderr;
 
-	fprintf(fp, "\nThis build supports:"
-			IF_FEATURE_MAKE_EXTENSIONS(
-				" non-POSIX extensions,"
-				IF_FEATURE_MAKE_POSIX_2024(" POSIX 2024,")
-				" POSIX 2017\n"
-			)
-			IF_NOT_FEATURE_MAKE_EXTENSIONS(
-				IF_FEATURE_MAKE_POSIX_2024(" POSIX 2024")
-				IF_NOT_FEATURE_MAKE_POSIX_2024(" POSIX 2017")
-			)
-			);
+	fprintf(fp, "Usage: %s", myname);
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+	fprintf(fp, " [--posix] [-C path]");
+#endif
+	fprintf(fp, " [-f makefile]");
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+	fprintf(fp, " [-j num]");
+#endif
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+	fprintf(fp, " [-x pragma]\n\t [-ehiknpqrsSt] ");
+#else
+	fprintf(fp, " [-eiknpqrsSt] ");
+#endif
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+	fprintf(fp, "[macro[:[:[:]]]=val ...]");
+#else
+	fprintf(fp, "[macro[::[:]]=val ...]");
+#endif
+#else
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+	fprintf(fp, "[macro[:]=val ...]");
+#else
+	fprintf(fp, "[macro=val ...]");
+#endif
+#endif
+	fprintf(fp, " [target ...]\n");
+
+	fprintf(fp, "\nThis build supports:");
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+	fprintf(fp, " non-POSIX extensions,");
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+	fprintf(fp, " POSIX 2024,");
+#endif
+	fprintf(fp, " POSIX 2017\n");
+#else
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+	fprintf(fp, " POSIX 2024");
+#else
+	fprintf(fp, " POSIX 2017");
+#endif
+#endif
 #if ENABLE_FEATURE_MAKE_EXTENSIONS && ENABLE_FEATURE_MAKE_POSIX_2024
-	fprintf(fp,
-			"In strict POSIX mode the %s standard is enforced by default.\n",
-			DEFAULT_POSIX_LEVEL == STD_POSIX_2017 ? "2017" : "2024");
+	{
+		const char *level;
+
+		if (DEFAULT_POSIX_LEVEL == STD_POSIX_2017)
+			level = "2017";
+		else
+			level = "2024";
+
+		fprintf(fp,
+				"In strict POSIX mode the %s standard is enforced by default.\n",
+				level);
+	}
 #endif
 #if !ENABLE_FEATURE_MAKE_EXTENSIONS
-# if ENABLE_FEATURE_MAKE_POSIX_2024
-	fprintf(fp, "\nFor details see:\n"
-	"  https://pubs.opengroup.org/onlinepubs/9799919799.2024edition/utilities/make.html\n");
-# else
-	fprintf(fp, "\nFor details see:\n"
-	"  https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/make.html\n");
-# endif
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+	fprintf(fp, "\nFor details see:\n");
+	fprintf(fp, "  https://pubs.opengroup.org/onlinepubs/9799919799.2024edition/utilities/make.html\n");
+#else
+	fprintf(fp, "\nFor details see:\n");
+	fprintf(fp, "  https://pubs.opengroup.org/onlinepubs/9699919799.2018edition/utilities/make.html\n");
+#endif
 #endif
 	exit(exit_code);
 }
@@ -63,13 +88,13 @@ process_options(int argc, char **argv, int from_env)
 	int opt;
 	uint32_t flags = 0;
 
-	while ((opt = getopt(argc, argv, OPTSTR1 OPTSTR2 OPT_OFFSET)) != -1) {
+	while ((opt = getopt(argc, argv, OPTSTR OPT_OFFSET)) != -1) {
 		switch(opt) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 		case 'C':
 			if (!posix && !from_env) {
 				if (chdir(optarg) == -1) {
-					error("can't chdir to %s: %s", optarg, strerror(errno));
+					error("can't chdir to %s: %s", optarg, strerror(PDPMAKE_ERRNO));
 				}
 				flags |= OPT_C;
 				break;
