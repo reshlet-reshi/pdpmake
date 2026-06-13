@@ -16,6 +16,7 @@ make: $(OBJS)
 	$(CC) $(LDFLAGS) -o make $(OBJS)
 
 $(OBJS): make.h
+main.o: main_prelude.inc main_options.inc main_startup.inc main_runtime.inc main_entry.inc
 check.o: make_m2.h
 macro.o: make_m2.h
 make.o: make_m2.h
