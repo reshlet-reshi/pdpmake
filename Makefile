@@ -10,7 +10,7 @@ OBJS = check.o classify.o command.o condition.o expand.o extensions.o input.o ma
 M2_CC = ../stage0-posix/AMD64/bin/M2-Mesoplanet
 M2_BINDIR = ../stage0-posix/AMD64/bin
 M2LIBC_PATH = ../stage0-posix/M2-Mesoplanet/M2libc
-M2_OBJS = check.m2.o classify.m2.o command.m2.o condition.m2.o expand.m2.o extensions.m2.o input.m2.o macro.m2.o main.m2.o make.m2.o modtime.m2.o options.m2.o read.m2.o rules.m2.o runtime.m2.o startup.m2.o target.m2.o utils.m2.o
+M2_OBJS = $(OBJS:.o=.m2.o)
 
 make: $(OBJS)
 	$(CC) $(LDFLAGS) -o make $(OBJS)
