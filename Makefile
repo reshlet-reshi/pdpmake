@@ -10,7 +10,7 @@ OBJS = check.o classify.o command.o condition.o expand.o extensions.o input.o ma
 M2_CC = ../stage0-posix/AMD64/bin/M2-Mesoplanet
 M2_BINDIR = ../stage0-posix/AMD64/bin
 M2LIBC_PATH = ../stage0-posix/M2-Mesoplanet/M2libc
-M2_OBJS = check.m2.o classify.m2.o command.m2.o extensions.m2.o macro.m2.o main.m2.o make.m2.o modtime.m2.o options.m2.o read.m2.o rules.m2.o runtime.m2.o startup.m2.o target.m2.o utils.m2.o
+M2_OBJS = check.m2.o classify.m2.o command.m2.o condition.m2.o extensions.m2.o macro.m2.o main.m2.o make.m2.o modtime.m2.o options.m2.o read.m2.o rules.m2.o runtime.m2.o startup.m2.o target.m2.o utils.m2.o
 
 make: $(OBJS)
 	$(CC) $(LDFLAGS) -o make $(OBJS)
@@ -19,6 +19,7 @@ $(OBJS): make.h
 check.o: make_m2.h
 classify.o: make_m2.h
 command.o: make_m2.h
+condition.o: make_m2.h
 extensions.o: make_m2.h
 macro.o: make_m2.h
 main.o: make_m2.h
@@ -55,6 +56,9 @@ classify.m2.o: classify.c make_m2.h
 
 command.m2.o: command.c make_m2.h
 	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f command.c -o $@
+
+condition.m2.o: condition.c make_m2.h
+	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f condition.c -o $@
 
 extensions.m2.o: extensions.c make_m2.h
 	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f extensions.c -o $@

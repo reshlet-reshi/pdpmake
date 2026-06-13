@@ -623,6 +623,7 @@ extern char *numjobs;
 extern bool posix;
 extern unsigned char pragma;
 extern unsigned char posix_level;
+extern uint8_t clevel;
 
 #if !ENABLE_FEATURE_MAKE_EXTENSIONS
 #define dyndep(n, i, p) dyndep(n, i)
@@ -659,9 +660,12 @@ int make(struct name *np, int level);
 char *expand_macros(const char *str, int except_dollar);
 char *gettok(char **ptr);
 char *skip_macro(const char *s);
+char *find_char(const char *str, int c);
+struct macro *getmp(const char *name);
 void setmacro(const char *name, const char *val, int level);
 const char *is_suffix(const char *s);
 int ends_with_bracket(const char *s);
+void process_line(char *s);
 int skip_line(const char *str1);
 void pragmas_from_env(void);
 uint32_t process_options(int argc, char **argv, int from_env);

@@ -1,4 +1,4 @@
-#include "make.h"
+#include "make_m2.h"
 
 /*
  * Process a non-command line
@@ -9,10 +9,9 @@ process_line(char *s)
 	char *t;
 
 	// Strip comment
-#if ENABLE_FEATURE_MAKE_EXTENSIONS
 	// don't treat '#' in macro expansion as a comment
 	// nor '#' outside macro expansion preceded by backslash
-	if (!posix) {
+	if (ENABLE_FEATURE_MAKE_EXTENSIONS && !posix) {
 		char *u = s;
 		while ((t = find_char(u, '#')) && t > u && t[-1] == '\\') {
 			for (u = t; *u; ++u) {
@@ -22,15 +21,17 @@ process_line(char *s)
 			u = t;
 		}
 	} else
-#endif
+	{
 		t = strchr(s, '#');
+	}
 	if (t)
 		*t = '\0';
 
 	// Replace escaped newline and any leading white space on the
 	// following line with a single space.  Stop processing at a
 	// non-escaped newline.
-	for (t = s; *s && *s != '\n'; ) {
+	t = s;
+	while (*s && *s != '\n') {
 		if (s[0] == '\\' && s[1] == '\n') {
 			s += 2;
 			while (isspace(*s))
@@ -46,9 +47,9 @@ process_line(char *s)
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 enum {
 	INITIAL = 0,
-	SKIP_LINE = 1 << 0,
-	EXPECT_ELSE = 1 << 1,
-	GOT_MATCH = 1 << 2
+	SKIP_LINE = 0x01,
+	EXPECT_ELSE = 0x02,
+	GOT_MATCH = 0x04
 };
 
 #define IF_MAX 10
