@@ -3,7 +3,7 @@
  * Return a pointer to the next blank-delimited word or NULL if
  * there are none left.
  */
-static char *
+char *
 gettok(char **ptr)
 {
 	char *p;
@@ -346,4 +346,3 @@ expand_macros(const char *str, int except_dollar)
 	}
 	return exp;
 }
-

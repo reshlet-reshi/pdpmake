@@ -1,3 +1,5 @@
+#include "make.h"
+
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 /*
  * Check for an unescaped wildcard character
@@ -25,7 +27,7 @@ static int wildchar(const char *p)
  * found, in which case the caller should call globfree() on the
  * glob_t structure.
  */
-static int
+int
 wildcard(char *p, glob_t *gd)
 {
 	int ret;
@@ -70,4 +72,3 @@ pragmas_from_env(void)
 	free(var);
 }
 #endif
-

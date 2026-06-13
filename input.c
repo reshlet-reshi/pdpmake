@@ -12,7 +12,6 @@ int dispno;	// Line number for display purposes
 #include "input_read.inc"
 #include "input_classify.inc"
 #include "input_command.inc"
-#include "input_extensions.inc"
 
 /*
  * Determine if a line is a target rule with an inline command.

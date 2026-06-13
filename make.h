@@ -12,6 +12,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <glob.h>
 #include <libgen.h>
 #include <limits.h>
 #include <signal.h>
@@ -373,5 +374,9 @@ unsigned int getbucket(const char *name);
 struct file *newfile(char *str, struct file *fphead);
 void freefiles(struct file *fp);
 int is_valid_target(const char *name);
+char *gettok(char **ptr);
 void pragmas_from_env(void);
 void pragmas_to_env(void);
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+int wildcard(char *p, glob_t *gd);
+#endif
