@@ -1,8 +1,7 @@
 /*
  * Parse a makefile
  */
-#include "make.h"
-#include <glob.h>
+#include "make_m2.h"
 
 int lineno;	// Physical line number in file
 int dispno;	// Line number for display purposes
@@ -33,7 +32,7 @@ input(FILE *fd, int ilevel)
 	struct depend *dp;
 	struct cmd *cp;
 	int startno, count;
-	bool semicolon_cmd, seen_inference;
+	bool semicolon_cmd, seen_inference, minus;
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 	uint8_t old_clevel = clevel;
 	bool dbl;
@@ -43,11 +42,6 @@ input(FILE *fd, int ilevel)
 	char **files;
 #else
 	const bool dbl = FALSE;
-#endif
-#if ENABLE_FEATURE_MAKE_POSIX_2024
-	bool minus;
-#else
-	const bool minus = FALSE;
 #endif
 
 	lineno = 0;
@@ -67,14 +61,14 @@ input(FILE *fd, int ilevel)
 		str = str1;
 
 		// Check for an include line
-# if ENABLE_FEATURE_MAKE_EXTENSIONS
-		if (!posix)
+		if (ENABLE_FEATURE_MAKE_EXTENSIONS && !posix)
 			while (isblank(*str))
 				++str;
-#endif
-#if ENABLE_FEATURE_MAKE_POSIX_2024
-		minus = !POSIX_2017 && *str == '-';
-#endif
+		minus = FALSE;
+		if (ENABLE_FEATURE_MAKE_POSIX_2024) {
+			if (!POSIX_2017 && *str == '-')
+				minus = TRUE;
+		}
 		p = str + minus;
 		if (strncmp(p, "include", 7) == 0 && isblank(p[7])) {
 			const char *old_makefile = makefile;
@@ -83,22 +77,20 @@ input(FILE *fd, int ilevel)
 			if (ilevel > 16)
 				error("too many includes");
 
-#if ENABLE_FEATURE_MAKE_POSIX_2024
 			count = 0;
-#endif
 			q = expanded = expand_macros(p + 7, FALSE);
 			while ((p = gettok(&q)) != NULL) {
 				FILE *ifd;
 
-#if ENABLE_FEATURE_MAKE_POSIX_2024
-				++count;
-				if (!POSIX_2017) {
-					// Try to create include file or bring it up-to-date
-					opts |= OPT_include;
-					make(newname(p), 1);
-					opts &= ~OPT_include;
+				if (ENABLE_FEATURE_MAKE_POSIX_2024) {
+					++count;
+					if (!POSIX_2017) {
+						// Try to create include file or bring it up-to-date
+						opts |= OPT_include;
+						make(newname(p), 1);
+						opts &= ~OPT_include;
+					}
 				}
-#endif
 				if ((ifd = fopen(p, "r")) == NULL) {
 					if (!minus)
 						error("can't open include file '%s'", p);
@@ -109,39 +101,34 @@ input(FILE *fd, int ilevel)
 					makefile = old_makefile;
 					lineno = old_lineno;
 				}
-#if ENABLE_FEATURE_MAKE_POSIX_2024
-				if (POSIX_2017)
+				if (ENABLE_FEATURE_MAKE_POSIX_2024 && POSIX_2017)
 					break;
-#endif
 			}
-#if ENABLE_FEATURE_MAKE_POSIX_2024
-			if (POSIX_2017) {
-				// In POSIX 2017 zero or more than one include file is
-				// unspecified behaviour.
-				if (p == NULL || gettok(&q)) {
-					error("one include file per line");
+			if (ENABLE_FEATURE_MAKE_POSIX_2024) {
+				if (POSIX_2017) {
+					// In POSIX 2017 zero or more than one include file is
+					// unspecified behaviour.
+					if (p == NULL || gettok(&q)) {
+						error("one include file per line");
+					}
+				} else if (count == 0) {
+					// In POSIX 2024 no include file is unspecified behaviour.
+					if (!ENABLE_FEATURE_MAKE_EXTENSIONS || posix)
+						error("no include file");
 				}
-			} else if (count == 0) {
-				// In POSIX 2024 no include file is unspecified behaviour.
-# if ENABLE_FEATURE_MAKE_EXTENSIONS
-				if (posix)
-# endif
-					error("no include file");
 			}
-#endif
 			goto end_loop;
 		}
 
 		// Check for a macro definition
 		str = str1;
-#if ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024
 		// POSIX 2024 seems to allow a tab as the first character of
 		// a macro definition, though most implementations don't.
-		if (POSIX_2017 && *str == '\t')
+		if ((ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024)
+				&& POSIX_2017 && *str == '\t')
 			error("command not allowed here");
-#endif
 		if (find_char(str, '=') != NULL) {
-			int level = (useenv || fd == NULL) ? 4 : 3;
+			int level;
 			// Use a copy of the line:  we might need the original
 			// if this turns out to be a target rule.
 			char *copy2 = xstrdup(str);
@@ -150,12 +137,16 @@ input(FILE *fd, int ilevel)
 			char eq = '\0';
 #endif
 			q = find_char(copy2, '=');		// q can't be NULL
+			if (useenv || fd == NULL)
+				level = 4;
+			else
+				level = 3;
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024
 			if (q - 1 > copy2) {
 				switch (q[-1]) {
 				case ':':
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 					// '::=' and ':::=' are from POSIX 2024.
 					if (!POSIX_2017 && q - 2 > copy2 && q[-2] == ':') {
 						if (q - 3 > copy2 && q[-3] == ':') {
@@ -167,27 +158,26 @@ input(FILE *fd, int ilevel)
 						}
 						break;
 					}
-# endif
-# if ENABLE_FEATURE_MAKE_EXTENSIONS
+#endif
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
 					// ':=' is a non-POSIX extension.
 					if (posix)
 						break;
-					IF_FEATURE_MAKE_POSIX_2024(goto set_eq;)
-# else
+					eq = q[-1];
+					q[-1] = '\0';
 					break;
-# endif
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#endif
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 				case '+':
 				case '?':
 				case '!':
 					// '+=', '?=' and '!=' are from POSIX 2024.
 					if (POSIX_2017)
 						break;
- IF_FEATURE_MAKE_EXTENSIONS(set_eq:)
-# endif
 					eq = q[-1];
 					q[-1] = '\0';
 					break;
+#endif
 				}
 			}
 #endif
@@ -220,7 +210,7 @@ input(FILE *fd, int ilevel)
 				q = newq = expand_macros(q, FALSE);
 				level |= M_IMMEDIATE;
 			}
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 			else if (eq == 'B') {
 				// BSD-style ':='.  Expand right-hand side of assignment,
 				// though not '$$'.  Macro is of type delayed-expansion.
@@ -232,7 +222,10 @@ input(FILE *fd, int ilevel)
 				// Append to current value
 				struct macro *mp = getmp(a);
 				char *rhs;
-				newq = mp && mp->m_val[0] ? xstrdup(mp->m_val) : NULL;
+				if (mp && mp->m_val[0])
+					newq = xstrdup(mp->m_val);
+				else
+					newq = NULL;
 				if (mp && mp->m_immediate) {
 					// Expand right-hand side of assignment (GNU make
 					// compatibility)
@@ -250,7 +243,7 @@ input(FILE *fd, int ilevel)
 				q = newq = run_command(cmd);
 				free(cmd);
 			}
-# endif
+#endif
 #endif
 			setmacro(a, q, level);
 #if ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024
@@ -297,10 +290,10 @@ input(FILE *fd, int ilevel)
 		dp = NULL;
 		while (((p = gettok(&q)) != NULL)) {
 #if !ENABLE_FEATURE_MAKE_EXTENSIONS
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 			if (!POSIX_2017 && strcmp(p, ".WAIT") == 0)
 				continue;
-# endif
+#endif
 			np = newname(p);
 			dp = newdep(np, dp);
 #else
@@ -341,17 +334,17 @@ input(FILE *fd, int ilevel)
 				files = gd.gl_pathv;
 			}
 			for (i = 0; i < nfile; ++i) {
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 				if (!POSIX_2017 && strcmp(files[i], ".WAIT") == 0)
 					continue;
-# endif
+#endif
 				np = newname(files[i]);
 				dp = newdep(np, dp);
 			}
 			if (files != &p)
 				globfree(&gd);
 			free(newp);
-#endif /* ENABLE_FEATURE_MAKE_EXTENSIONS */
+#endif
 		}
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 		lib = NULL;
@@ -371,6 +364,8 @@ input(FILE *fd, int ilevel)
 		seen_inference = FALSE;
 		while ((p = gettok(&q)) != NULL) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
+			char *target_name;
+
 			// If not in POSIX mode expand wildcards in the name.
 			nfile = 1;
 			files = &p;
@@ -378,18 +373,21 @@ input(FILE *fd, int ilevel)
 				nfile = gd.gl_pathc;
 				files = gd.gl_pathv;
 			}
-			for (i = 0; i < nfile; ++i)
-# define p files[i]
+			for (i = 0; i < nfile; ++i) {
+				target_name = files[i];
 #endif
+#if !ENABLE_FEATURE_MAKE_EXTENSIONS
 			{
-				int ttype = target_type(p);
+				char *target_name = p;
+#endif
+				int ttype = target_type(target_name);
 
-				np = newname(p);
+				np = newname(target_name);
 				if (ttype != T_NORMAL) {
 					// Enforce prerequisites/commands in POSIX mode
-					if (IF_FEATURE_MAKE_EXTENSIONS(posix &&) 1) {
+					if (!ENABLE_FEATURE_MAKE_EXTENSIONS || posix) {
 						if ((ttype & T_NOPREREQ) && dp)
-							error_not_allowed("prerequisites", p);
+							error_not_allowed("prerequisites", target_name);
 						if ((ttype & T_INFERENCE)) {
 							if (semicolon_cmd)
 								error_in_inference_rule("'; command'");
@@ -397,15 +395,15 @@ input(FILE *fd, int ilevel)
 						}
 						if ((ttype & T_COMMAND) && !cp &&
 								!((ttype & T_INFERENCE) && !semicolon_cmd))
-							error("commands required for %s", p);
+							error("commands required for %s", target_name);
 						if (!(ttype & T_COMMAND) && cp)
-							error_not_allowed("commands", p);
+							error_not_allowed("commands", target_name);
 					}
 
 					if ((ttype & T_INFERENCE)) {
 						np->n_flag |= N_INFERENCE;
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-					} else if (strcmp(p, ".DEFAULT") == 0) {
+					} else if (strcmp(target_name, ".DEFAULT") == 0) {
 						// .DEFAULT rule is a special case
 						np->n_flag |= N_SPECIAL | N_INFERENCE;
 #endif
@@ -419,12 +417,11 @@ input(FILE *fd, int ilevel)
 				count++;
 			}
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-# undef p
 			if (files != &p)
 				globfree(&gd);
 #endif
 		}
-		if (IF_FEATURE_MAKE_EXTENSIONS(posix &&) seen_inference && count != 1)
+		if ((!ENABLE_FEATURE_MAKE_EXTENSIONS || posix) && seen_inference && count != 1)
 			error_in_inference_rule("multiple targets");
 
 		// Prerequisites and commands will be unused if there were
@@ -437,7 +434,10 @@ input(FILE *fd, int ilevel)
  end_loop:
 		free(str1);
 		dispno = lineno;
-		str1 = str2 ? str2 : readline(fd, FALSE);
+		if (str2)
+			str1 = str2;
+		else
+			str1 = readline(fd, FALSE);
 		free(copy);
 		free(expanded);
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
