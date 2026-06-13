@@ -1,4 +1,4 @@
-#include "make.h"
+#include "make_m2.h"
 
 /*
  * Process a command line
@@ -33,7 +33,8 @@ process_command(char *s)
 #endif
 
 	// Process escaped newlines.  Stop at first non-escaped newline.
-	for (t = u = s; *u && *u != '\n'; ) {
+	t = u = s;
+	while (*u && *u != '\n') {
 		if (u[0] == '\\' && u[1] == '\n') {
 #if ENABLE_FEATURE_MAKE_POSIX_2024
 			if (POSIX_2017 || outside[u - s]) {
@@ -63,7 +64,6 @@ process_command(char *s)
 	return s;
 }
 
-#if ENABLE_FEATURE_MAKE_POSIX_2024
 char *
 run_command(const char *cmd)
 {
@@ -75,7 +75,7 @@ run_command(const char *cmd)
 	if ((fd = popen(cmd, "r")) == NULL)
 		return val;
 
-	for (;;) {
+	while (TRUE) {
 		nread = fread(buf, 1, sizeof(buf), fd);
 		if (nread == 0)
 			break;
@@ -91,10 +91,7 @@ run_command(const char *cmd)
 		return val;
 
 	// Strip leading whitespace in POSIX 2024 mode
-#if ENABLE_FEATURE_MAKE_EXTENSIONS
-	if (posix)
-#endif
-	{
+	if (!ENABLE_FEATURE_MAKE_EXTENSIONS || posix) {
 		s = val;
 		while (isspace(*s)) {
 			++s;
@@ -118,4 +115,3 @@ run_command(const char *cmd)
 	}
 	return val;
 }
-#endif
