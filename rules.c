@@ -274,10 +274,14 @@ static const char *macros_ext[] = {
 char *
 getrules(char *s, int size)
 {
+	int c;
 	char *r = s;
 	static const char **rulevec = NULL;
 	static const char *rulepos = NULL;
 	static int rule_idx = 0;
+
+	if (size < READLINE_CHUNK)
+		error("internal error: built-in rule buffer too small");
 
 	if (rule_idx == 0) {
 		rulevec = macros;
@@ -324,9 +328,14 @@ getrules(char *s, int size)
 	}
 
 	while (--size) {
-		if ((*r++ = *rulepos++) == '\n')
-			break;
+		c = *rulepos++;
+		if (c == '\0')
+			error("internal error: unterminated built-in rule");
+		*r++ = c;
+		if (c == '\n') {
+			*r = '\0';
+			return s;
+		}
 	}
-	*r = '\0';
-	return s;
+	error("internal error: built-in rule line too long");
 }

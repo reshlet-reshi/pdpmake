@@ -97,6 +97,7 @@ extern char **environ;
 #define TRUE		(1)
 #define FALSE		(0)
 #define MAX(a,b)	((a)>(b)?(a):(b))
+#define READLINE_CHUNK	256
 
 #if defined(__GLIBC__) && ENABLE_FEATURE_MAKE_EXTENSIONS
 // By default GNU libc getopt(3) allows options and non-options to be

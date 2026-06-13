@@ -591,21 +591,22 @@ readline(FILE *fd, int want_command)
 	int len = 0;
 
 	for (;;) {
-		// We need room for at least one character and a NUL terminator
-		if (len - pos > 1 &&
-				make_fgets(str + pos, len - pos, fd) == NULL) {
+		if (len - pos < READLINE_CHUNK) {
+			// Need more room
+			len += READLINE_CHUNK;
+			str = xrealloc(str, len);
+			continue;
+		}
+
+		if (make_fgets(str + pos, len - pos, fd) == NULL) {
 			if (pos)
 				return str;
 			free(str);
 			return NULL;	// EOF
 		}
 
-		if (len - pos < 2 || (p = strchr(str + pos, '\n')) == NULL) {
-			// Need more room
-			if (len)
-				pos = len - 1;
-			len += 256;
-			str = xrealloc(str, len);
+		if ((p = strchr(str + pos, '\n')) == NULL) {
+			pos = len - 1;
 			continue;
 		}
 		lineno++;
