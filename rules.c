@@ -278,12 +278,12 @@ getrules(char *s, int size)
 	char *r = s;
 	static const char **rulevec = NULL;
 	static const char *rulepos = NULL;
-	static int rule_idx = 0;
+	static int rule_idx = -1;
 
 	if (size < READLINE_CHUNK)
 		error("internal error: built-in rule buffer too small");
 
-	if (rule_idx == 0) {
+	if (rule_idx == -1) {
 		rulevec = macros;
 		rule_idx++;
 	}
@@ -292,7 +292,7 @@ getrules(char *s, int size)
 		if (rulevec != NULL && *rulevec != NULL) {
 			rulepos = *rulevec;
 			rulevec++;
-		} else if (rule_idx == 1) {
+		} else if (rule_idx == 0) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 			if (POSIX_2017)
 				rulevec = macros_2017;
@@ -307,7 +307,7 @@ getrules(char *s, int size)
 #endif
 			rule_idx++;
 		} else if (!norules) {
-			if (rule_idx == 2) {
+			if (rule_idx == 1) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 				rulevec = POSIX_2017 ? rules_2017 : rules_2024;
 #elif ENABLE_FEATURE_MAKE_POSIX_2024
@@ -316,7 +316,7 @@ getrules(char *s, int size)
 				rulevec = rules_2017;
 #endif
 				rule_idx++;
-			} else if (rule_idx == 3) {
+			} else if (rule_idx == 2) {
 				rulevec = rules;
 				rule_idx++;
 			} else {
