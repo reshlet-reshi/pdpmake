@@ -1,4 +1,4 @@
-#include "make.h"
+#include "make_m2.h"
 
 /*
  * If fd is NULL read the built-in rules.  Otherwise read from the
@@ -7,7 +7,9 @@
 static char *
 make_fgets(char *s, int size, FILE *fd)
 {
-	return fd ? fgets(s, size, fd) : getrules(s, size);
+	if (fd)
+		return fgets(s, size, fd);
+	return getrules(s, size);
 }
 
 /*
@@ -22,7 +24,7 @@ readline(FILE *fd, int want_command)
 	int pos = 0;
 	int len = 0;
 
-	for (;;) {
+	while (TRUE) {
 		if (len - pos < READLINE_CHUNK) {
 			// Need more room
 			len += READLINE_CHUNK;
@@ -70,11 +72,18 @@ readline(FILE *fd, int want_command)
 				p++;
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-			if (*p != '\n' && (posix ? *str != '#' : *p != '#'))
+			if (*p != '\n') {
+				if (posix) {
+					if (*str != '#')
+						return str;
+				} else if (*p != '#') {
+					return str;
+				}
+			}
 #else
 			if (*p != '\n' && *str != '#')
-#endif
 				return str;
+#endif
 		}
 
 		pos = 0;
