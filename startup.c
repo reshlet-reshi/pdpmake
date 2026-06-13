@@ -1,10 +1,12 @@
+#include "make.h"
+
 /*
  * Instantiate all macros in an argv-style array of pointers.  Stop
  * processing at the first string that doesn't contain an equal sign.
  * As an extension, target arguments on the command line (level 1)
  * are skipped and will be processed later.
  */
-static char **
+char **
 process_macros(char **argv, int level)
 {
 	char *equal;
@@ -102,7 +104,7 @@ process_macros(char **argv, int level)
  * by the MAKEFLAGS environment variable (apart from MAKEFLAGS itself).
  * Add macros that were defined on the command line to the environment.
  */
-static void
+void
 update_makeflags(void)
 {
 	int i;

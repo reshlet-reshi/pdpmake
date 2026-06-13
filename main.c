@@ -36,8 +36,6 @@ unsigned char pragma = 0;
 unsigned char posix_level = DEFAULT_POSIX_LEVEL;
 #endif
 
-#include "main_startup.inc"
-
 #include "main_runtime.inc"
 
 int
