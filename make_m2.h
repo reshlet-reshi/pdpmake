@@ -17,6 +17,11 @@ typedef unsigned int uint32_t;
 #define FALSE 0
 #define INT_MAX 2147483647
 #define ENOENT 2
+#define O_RDWR 2
+#define O_CREAT 64
+#define AT_FDCWD -100
+#define UTIME_NOW 1073741823
+#define CLOCK_REALTIME 0
 
 #if !defined(__M2__)
 #ifndef _XOPEN_SOURCE
@@ -94,6 +99,8 @@ struct ar_hdr {
 
 int printf(const char *format, ...);
 int putchar(int c);
+int puts(const char *s);
+int fflush(FILE *stream);
 void free(void *ptr);
 int strcmp(const char *s1, const char *s2);
 size_t strlen(const char *str);
@@ -112,6 +119,12 @@ size_t fread(void *ptr, size_t size, size_t nmemb, FILE *stream);
 int feof(FILE *stream);
 int fseek(FILE *stream, long offset, int whence);
 int fclose(FILE *stream);
+int unlink(const char *path);
+int open(const char *path, int oflag, ...);
+int close(int fd);
+int utimensat(int fd, const char *path, const struct timespec times[2], int flag);
+int clock_gettime(int clk_id, struct timespec *tp);
+int system(const char *command);
 void exit(int status);
 void *malloc(size_t size);
 void *realloc(void *ptr, size_t size);
@@ -203,30 +216,150 @@ isfname(int c)
 	return ispname(c) || c == '-';
 }
 
+static int
+pdpmake_wifexited(int status)
+{
+	return (status & 127) == 0;
+}
+
+static int
+pdpmake_wexitstatus(int status)
+{
+	return (status >> 8) & 255;
+}
+
+static int
+pdpmake_wifsignaled(int status)
+{
+	return (status & 127) != 0 && (status & 127) != 127;
+}
+
+static int
+pdpmake_wtermsig(int status)
+{
+	return status & 127;
+}
+
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 #define N_DOUBLE 0x10
 #else
 #define N_DOUBLE 0x00
 #endif
 #define N_DOING 0x01
+#define N_DONE 0x02
 #define N_TARGET 0x04
+#define N_PRECIOUS 0x08
+#define N_SILENT 0x20
+#define N_IGNORE 0x40
 #define N_SPECIAL 0x80
 #if ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024
 #define N_MARK 0x100
 #else
 #define N_MARK 0x00
 #endif
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+#define N_PHONY 0x200
+#else
+#define N_PHONY 0x00
+#endif
 #define N_INFERENCE 0x400
 #define HTABSIZE 199
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
+#define OPT_e (1 << 0)
+#define OPT_h (1 << 1)
+#define OPT_i (1 << 2)
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+#define OPT_j (1 << 3)
+#define OPT_k (1 << 4)
+#define OPT_n (1 << 5)
+#define OPT_q (1 << 6)
 #define OPT_r (1 << 7)
-#elif ENABLE_FEATURE_MAKE_POSIX_2024
-#define OPT_r (1 << 6)
+#define OPT_s (1 << 8)
+#define OPT_S (1 << 9)
+#define OPT_t (1 << 10)
+#define OPT_p (1 << 11)
+#define OPT_f (1 << 12)
+#define OPT_C (1 << 13)
+#define OPT_x (1 << 14)
+#define OPT_precious (1 << 15)
+#define OPT_phony (1 << 16)
+#define OPT_include (1 << 17)
+#define OPT_make (1 << 18)
 #else
-#define OPT_r (1 << 5)
+#define OPT_j 0
+#define OPT_k (1 << 3)
+#define OPT_n (1 << 4)
+#define OPT_q (1 << 5)
+#define OPT_r (1 << 6)
+#define OPT_s (1 << 7)
+#define OPT_S (1 << 8)
+#define OPT_t (1 << 9)
+#define OPT_p (1 << 10)
+#define OPT_f (1 << 11)
+#define OPT_C (1 << 12)
+#define OPT_x (1 << 13)
+#define OPT_precious (1 << 14)
+#define OPT_phony 0
+#define OPT_include 0
+#define OPT_make 0
 #endif
+#elif ENABLE_FEATURE_MAKE_POSIX_2024
+#define OPT_e (1 << 0)
+#define OPT_h 0
+#define OPT_i (1 << 1)
+#define OPT_j (1 << 2)
+#define OPT_k (1 << 3)
+#define OPT_n (1 << 4)
+#define OPT_q (1 << 5)
+#define OPT_r (1 << 6)
+#define OPT_s (1 << 7)
+#define OPT_S (1 << 8)
+#define OPT_t (1 << 9)
+#define OPT_p (1 << 10)
+#define OPT_f (1 << 11)
+#define OPT_C 0
+#define OPT_x 0
+#define OPT_precious (1 << 12)
+#define OPT_phony (1 << 13)
+#define OPT_include (1 << 14)
+#define OPT_make (1 << 15)
+#else
+#define OPT_e (1 << 0)
+#define OPT_h 0
+#define OPT_i (1 << 1)
+#define OPT_j 0
+#define OPT_k (1 << 2)
+#define OPT_n (1 << 3)
+#define OPT_q (1 << 4)
+#define OPT_r (1 << 5)
+#define OPT_s (1 << 6)
+#define OPT_S (1 << 7)
+#define OPT_t (1 << 8)
+#define OPT_p (1 << 9)
+#define OPT_f (1 << 10)
+#define OPT_C 0
+#define OPT_x 0
+#define OPT_precious (1 << 11)
+#define OPT_phony 0
+#define OPT_include 0
+#define OPT_make 0
+#endif
+
+#define ignore (opts & OPT_i)
+#define errcont (opts & OPT_k)
+#define dryrun (opts & OPT_n)
+#define print (opts & OPT_p)
+#define quest (opts & OPT_q)
 #define norules (opts & OPT_r)
+#define silent (opts & OPT_s)
+#define dotouch (opts & OPT_t)
+#define precious (opts & OPT_precious)
+#define doinclude (opts & OPT_include)
+#define domake (opts & OPT_make)
+
+#define MAKE_FAILURE 0x01
+#define MAKE_DIDSOMETHING 0x02
 
 #define M_IMMEDIATE 0x08
 #define M_VALID 0x10
@@ -343,6 +476,7 @@ struct file {
 extern struct name *namehead[HTABSIZE];
 extern struct macro *macrohead[HTABSIZE];
 extern struct name *firstname;
+extern struct name *target;
 extern uint32_t opts;
 extern const char *myname;
 extern const char *makefile;
@@ -377,5 +511,10 @@ void set_pragma(const char *name);
 void pragmas_to_env(void);
 int is_valid_target(const char *name);
 int setenv(const char *name, const char *value, int overwrite);
+void remove_target(void);
+int make(struct name *np, int level);
+char *expand_macros(const char *str, int except_dollar);
+void setmacro(const char *name, const char *val, int level);
+const char *is_suffix(const char *s);
 
 #endif

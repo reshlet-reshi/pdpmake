@@ -1,7 +1,7 @@
 /*
  * Do the actual making for make
  */
-#include "make.h"
+#include "make_m2.h"
 
 struct name *target;
 
@@ -25,17 +25,22 @@ touch(struct name *np)
 		printf("touch %s\n", np->n_name);
 
 	if (!dryrun) {
-		const struct timespec timebuf[2] = {{0, UTIME_NOW}, {0, UTIME_NOW}};
+		struct timespec timebuf[2];
+
+		timebuf[0].tv_sec = 0;
+		timebuf[0].tv_nsec = UTIME_NOW;
+		timebuf[1].tv_sec = 0;
+		timebuf[1].tv_nsec = UTIME_NOW;
 
 		if (utimensat(AT_FDCWD, np->n_name, timebuf, 0) < 0) {
-			if (errno == ENOENT) {
+			if (PDPMAKE_ERRNO == ENOENT) {
 				int fd = open(np->n_name, O_RDWR | O_CREAT, 0666);
 				if (fd >= 0) {
 					close(fd);
 					return;
 				}
 			}
-			warning("touch %s failed: %s\n", np->n_name, strerror(errno));
+			warning("touch %s failed: %s\n", np->n_name, strerror(PDPMAKE_ERRNO));
 		}
 	}
 }
@@ -54,14 +59,12 @@ docmds(struct name *np, struct cmd *cp)
 
 		// Location of command in makefile (for use in error messages)
 		curr_cmd = cp;
-#if ENABLE_FEATURE_MAKE_POSIX_2024
 		opts &= ~OPT_make;	// We want to know if $(MAKE) is expanded
-#endif
 		q = command = expand_macros(cp->c_cmd, FALSE);
 		ssilent = silent || (np->n_flag & N_SILENT) || dotouch;
 		signore = ignore || (np->n_flag & N_IGNORE);
 		sdomake = (!dryrun || doinclude || domake) && !dotouch;
-		for (;;) {
+		while (TRUE) {
 			if (*q == '@')	// Specific silent
 				ssilent = TRUE + 1;
 			else if (*q == '-')	// Specific ignore
@@ -96,12 +99,24 @@ docmds(struct name *np, struct cmd *cp)
 		if (sdomake && *q != '\0') {	// Ignore empty commands
 			// Get the shell to execute it
 			int status;
-			char *cmd = !signore IF_FEATURE_MAKE_EXTENSIONS(&& posix) ?
-							xconcat3("set -e;", q, "") : q;
+			char *cmd;
+
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+			if (!signore && posix)
+#else
+			if (!signore)
+#endif
+				cmd = xconcat3("set -e;", q, "");
+			else
+				cmd = q;
 
 			target = np;
 			status = system(cmd);
-			if (!signore IF_FEATURE_MAKE_EXTENSIONS(&& posix))
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+			if (!signore && posix)
+#else
+			if (!signore)
+#endif
 				free(cmd);
 			// If this command was being run to create an include file
 			// or bring it up-to-date errors should be ignored and a
@@ -110,7 +125,7 @@ docmds(struct name *np, struct cmd *cp)
 				error("couldn't execute '%s'", q);
 			} else if (status != 0 && !signore) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-				if (!posix && WIFSIGNALED(status))
+				if (!posix && pdpmake_wifsignaled(status))
 					remove_target();
 #endif
 				if (doinclude) {
@@ -119,12 +134,12 @@ docmds(struct name *np, struct cmd *cp)
 					const char *err_type = NULL;
 					int err_value = 1;
 
-					if (WIFEXITED(status)) {
+					if (pdpmake_wifexited(status)) {
 						err_type = "exit";
-						err_value = WEXITSTATUS(status);
-					} else if (WIFSIGNALED(status)) {
+						err_value = pdpmake_wexitstatus(status);
+					} else if (pdpmake_wifsignaled(status)) {
 						err_type = "signal";
-						err_value = WTERMSIG(status);
+						err_value = pdpmake_wtermsig(status);
 					}
 
 					if (!quest || err_value == 127) {
@@ -173,8 +188,11 @@ remove_suffix(const char *name, const char *tsuff)
 		base = has_suffix(name, tsuff);
 	} else {
 		struct name *xp = newname(".SUFFIXES");
-		for (struct rule *rp = xp->n_rule; rp; rp = rp->r_next) {
-			for (struct depend *dp = rp->r_dep; dp; dp = dp->d_next) {
+		struct rule *rp;
+		struct depend *dp;
+
+		for (rp = xp->n_rule; rp; rp = rp->r_next) {
+			for (dp = rp->r_dep; dp; dp = dp->d_next) {
 				base = has_suffix(name, dp->d_name->n_name);
 				if (base) {
 					return base;
@@ -187,11 +205,11 @@ remove_suffix(const char *name, const char *tsuff)
 #endif
 
 #if !ENABLE_FEATURE_MAKE_POSIX_2024 && !ENABLE_FEATURE_MAKE_EXTENSIONS
-# define make1(n, c, o, a, d, i, t) make1(n, c, o, i)
+#define make1(n, c, o, a, d, i, t) make1(n, c, o, i)
 #elif ENABLE_FEATURE_MAKE_POSIX_2024 && !ENABLE_FEATURE_MAKE_EXTENSIONS
-# define make1(n, c, o, a, d, i, t) make1(n, c, a, d, o, i)
+#define make1(n, c, o, a, d, i, t) make1(n, c, a, d, o, i)
 #elif !ENABLE_FEATURE_MAKE_POSIX_2024 && ENABLE_FEATURE_MAKE_EXTENSIONS
-# define make1(n, c, o, a, d, i, t) make1(n, c, o, i, t)
+#define make1(n, c, o, a, d, i, t) make1(n, c, o, i, t)
 #endif
 static int
 make1(struct name *np, struct cmd *cp, char *oodate, char *allsrc,
@@ -209,7 +227,11 @@ make1(struct name *np, struct cmd *cp, char *oodate, char *allsrc,
 #endif
 	setmacro("%", member, 0 | M_VALID);
 	setmacro("@", name, 0 | M_VALID);
-	if (implicit IF_FEATURE_MAKE_EXTENSIONS(|| !posix)) {
+	if (implicit
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+			|| !posix
+#endif
+			) {
 		char *s;
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
@@ -239,7 +261,10 @@ make1(struct name *np, struct cmd *cp, char *oodate, char *allsrc,
 		} else
 #endif
 		{
-			base = member ? member : name;
+			if (member)
+				base = member;
+			else
+				base = name;
 			s = suffix(base);
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 			// As an extension, if we're not dealing with an implicit
@@ -283,7 +308,9 @@ timespec_le(const struct timespec *t, const struct timespec *p)
 static const struct timespec *
 timespec_max(const struct timespec *t, const struct timespec *p)
 {
-	return timespec_le(t, p) ? p : t;
+	if (timespec_le(t, p))
+		return p;
+	return t;
 }
 
 /*
@@ -305,8 +332,12 @@ make(struct name *np, int level)
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 	const char *tsuff = NULL;
 #endif
-	struct timespec dtim = {1, 0};
+	struct timespec dtim;
+	const struct timespec *mtim;
 	int estat = 0;
+
+	dtim.tv_sec = 1;
+	dtim.tv_nsec = 0;
 
 	if (np->n_flag & N_DONE)
 		return 0;
@@ -354,11 +385,11 @@ make(struct name *np, int level)
 		// an inference rule.
 		for (rp = np->n_rule; rp; rp = rp->r_next) {
 			if (!rp->r_cmd) {
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 				// Phony targets don't need an inference rule.
 				if (!posix && (np->n_flag & N_PHONY))
 					continue;
-# endif
+#endif
 				impdep = dyndep(np, &infrule, &tsuff);
 				if (!impdep) {
 					if (doinclude)
@@ -391,9 +422,9 @@ make(struct name *np, int level)
 			// If the rule has no commands use the inference rule.
 			// Unless there isn't one, as allowed for phony targets.
 			if (!rp->r_cmd) {
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 				if (impdep)
-# endif
+#endif
 				{
 					locdep = impdep;
 					infrule.r_dep->d_next = rp->r_dep;
@@ -402,8 +433,10 @@ make(struct name *np, int level)
 				}
 			}
 			// A rule with no prerequisities is executed unconditionally.
-			if (!rp->r_dep)
-				dtim = np->n_tim;
+			if (!rp->r_dep) {
+				dtim.tv_sec = np->n_tim.tv_sec;
+				dtim.tv_nsec = np->n_tim.tv_nsec;
+			}
 			// Reset flag to detect duplicate prerequisites
 			for (dp = rp->r_dep; dp; dp = dp->d_next) {
 				dp->d_name->n_flag &= ~N_MARK;
@@ -431,7 +464,9 @@ make(struct name *np, int level)
 #if ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024
 			dp->d_name->n_flag |= N_MARK;
 #endif
-			dtim = *timespec_max(&dtim, &dp->d_name->n_tim);
+			mtim = timespec_max(&dtim, &dp->d_name->n_tim);
+			dtim.tv_sec = mtim->tv_sec;
+			dtim.tv_nsec = mtim->tv_nsec;
 		}
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 		if ((np->n_flag & N_DOUBLE)) {
@@ -439,7 +474,8 @@ make(struct name *np, int level)
 				if (!(estat & MAKE_FAILURE)) {
 					estat |= make1(np, rp->r_cmd, oodate, allsrc,
 										dedup, locdep, tsuff);
-					dtim = (struct timespec){1, 0};
+					dtim.tv_sec = 1;
+					dtim.tv_nsec = 0;
 				}
 				free(oodate);
 				oodate = NULL;
