@@ -336,6 +336,10 @@ char *get_shell(void);
 char *expand_macros(const char *str, int except_dollar);
 void input(FILE *fd, int ilevel);
 char *readline(FILE *fd, int want_command);
+char *process_command(char *s);
+#if ENABLE_FEATURE_MAKE_POSIX_2024
+char *run_command(const char *cmd);
+#endif
 struct macro *getmp(const char *name);
 void setmacro(const char *name, const char *val, int level);
 void freemacros(void);
@@ -376,6 +380,7 @@ struct file *newfile(char *str, struct file *fphead);
 void freefiles(struct file *fp);
 int is_valid_target(const char *name);
 char *gettok(char **ptr);
+char *skip_macro(const char *s);
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 int skip_line(const char *str1);
 #endif

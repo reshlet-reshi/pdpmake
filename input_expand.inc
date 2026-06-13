@@ -29,7 +29,7 @@ gettok(char **ptr)
 /*
  * Skip over (possibly adjacent or nested) macro expansions.
  */
-static char *
+char *
 skip_macro(const char *s)
 {
 	while (*s && s[0] == '$') {

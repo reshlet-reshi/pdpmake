@@ -1,7 +1,9 @@
+#include "make.h"
+
 /*
  * Process a command line
  */
-static char *
+char *
 process_command(char *s)
 {
 	char *t, *u;
@@ -62,7 +64,7 @@ process_command(char *s)
 }
 
 #if ENABLE_FEATURE_MAKE_POSIX_2024
-static char *
+char *
 run_command(const char *cmd)
 {
 	FILE *fd;
@@ -117,4 +119,3 @@ run_command(const char *cmd)
 	return val;
 }
 #endif
-
