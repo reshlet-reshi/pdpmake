@@ -271,70 +271,68 @@ static const char *macros_ext[] = {
 /*
  * Read the built-in rules using a fake fgets-like interface.
  */
+#define TAIL_BLOCK_COUNT 3
 char *
-getrules(char *s, int size)
+getrules(char *buf, int buf_sz)
 {
-	int c;
-	char *r = s;
-	static const char **rulevec = NULL;
-	static const char *rulepos = NULL;
-	static int rule_idx = -1;
+	static const char **block = NULL;
+	static int tail_block_idx = -1;
+	static const char **tail_blocks[TAIL_BLOCK_COUNT] = { NULL, NULL, NULL };
 
-	if (size < READLINE_CHUNK)
+	const char *line = NULL;
+	char ch;
+	char *cursor = buf;
+
+	if (buf_sz < READLINE_CHUNK)
 		error("internal error: built-in rule buffer too small");
 
-	if (rule_idx == -1) {
-		rulevec = macros;
-		rule_idx++;
-	}
+	if (tail_block_idx == -1) {
+		block = macros;
 
-	while (rulepos == NULL || *rulepos == '\0') {
-		if (rulevec != NULL && *rulevec != NULL) {
-			rulepos = *rulevec;
-			rulevec++;
-		} else if (rule_idx == 0) {
+		tail_block_idx = 0;
+
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-			if (POSIX_2017)
-				rulevec = macros_2017;
-			else if (posix)
-				rulevec = macros_2024;
-			else
-				rulevec = macros_ext;
+		if (POSIX_2017)
+			tail_blocks[0] = macros_2017;
+		else if (posix)
+			tail_blocks[0] = macros_2024;
+		else
+			tail_blocks[0] = macros_ext;
 #elif ENABLE_FEATURE_MAKE_POSIX_2024
-			rulevec = macros_2024;
+		tail_blocks[0] = macros_2024;
 #else
-			rulevec = macros_2017;
+		tail_blocks[0] = macros_2017;
 #endif
-			rule_idx++;
-		} else if (!norules) {
-			if (rule_idx == 1) {
+
+		if (!norules) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-				rulevec = POSIX_2017 ? rules_2017 : rules_2024;
+			tail_blocks[1] = POSIX_2017 ? rules_2017 : rules_2024;
 #elif ENABLE_FEATURE_MAKE_POSIX_2024
-				rulevec = rules_2024;
+			tail_blocks[1] = rules_2024;
 #else
-				rulevec = rules_2017;
+			tail_blocks[1] = rules_2017;
 #endif
-				rule_idx++;
-			} else if (rule_idx == 2) {
-				rulevec = rules;
-				rule_idx++;
-			} else {
-				return NULL;
-			}
-		} else {
-			return NULL;
+
+			tail_blocks[2] = rules;
 		}
 	}
 
-	while (--size) {
-		c = *rulepos++;
-		if (c == '\0')
+	while (block == NULL || *block == NULL) {
+		if (tail_block_idx >= TAIL_BLOCK_COUNT)
+			return NULL;
+		block = tail_blocks[tail_block_idx++];
+	}
+
+	line = *block++;
+
+	while (--buf_sz) {
+		ch = *line++;
+		if (ch == '\0')
 			error("internal error: unterminated built-in rule");
-		*r++ = c;
-		if (c == '\n') {
-			*r = '\0';
-			return s;
+		*cursor++ = ch;
+		if (ch == '\n') {
+			*cursor = '\0';
+			return buf;
 		}
 	}
 	error("internal error: built-in rule line too long");
