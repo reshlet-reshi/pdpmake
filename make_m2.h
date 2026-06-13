@@ -65,9 +65,25 @@ struct sigaction {
 	int sa_flags;
 	pdpmake_sighandler_t sa_restorer;
 };
+
 #endif
 
 #include <stdarg.h>
+
+typedef struct {
+	size_t gl_pathc;
+	char **gl_pathv;
+	size_t gl_offs;
+	int gl_flags;
+	void *gl_closedir;
+	void *gl_readdir;
+	void *gl_opendir;
+	void *gl_lstat;
+	void *gl_stat;
+} glob_t;
+
+#define GLOB_NOSORT 4
+#define GLOB_NOMATCH 3
 
 typedef struct __IO_FILE FILE;
 
@@ -152,6 +168,7 @@ char *strrchr(const char *str, int ch);
 size_t strspn(const char *s, const char *accept);
 int memcmp(const void *s1, const void *s2, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
+void *memset(void *s, int c, size_t n);
 char *strerror(int errnum);
 extern FILE *stdout;
 extern FILE *stderr;
@@ -192,6 +209,8 @@ void exit(int status);
 void *malloc(size_t size);
 void *realloc(void *ptr, size_t size);
 char *strndup(const char *s, size_t n);
+int glob(const char *pattern, int flags, void *errfunc, glob_t *pglob);
+void globfree(glob_t *pglob);
 #if defined(__M2__)
 extern int errno;
 int stat(const char *path, struct stat *buf);
@@ -623,6 +642,7 @@ int setenv(const char *name, const char *value, int overwrite);
 void remove_target(void);
 int make(struct name *np, int level);
 char *expand_macros(const char *str, int except_dollar);
+char *gettok(char **ptr);
 void setmacro(const char *name, const char *val, int level);
 const char *is_suffix(const char *s);
 void pragmas_from_env(void);

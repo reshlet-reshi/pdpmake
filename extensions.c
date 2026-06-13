@@ -1,4 +1,4 @@
-#include "make.h"
+#include "make_m2.h"
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 /*
