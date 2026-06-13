@@ -1,4 +1,8 @@
 /*
+ * main_prelude.inc: prologue and global state.
+ */
+
+/*
  * make [--posix] [-C path] [-f makefile] [-j num] [-x pragma]
  *      [-ehiknpqrsSt] [macro[:[:[:]]]=val ...] [target ...]
  *
@@ -35,6 +39,10 @@ bool seen_first;
 unsigned char pragma = 0;
 unsigned char posix_level = DEFAULT_POSIX_LEVEL;
 #endif
+
+/*
+ * main_options.inc: option parsing and MAKEFLAGS argv expansion.
+ */
 
 static void
 usage(int exit_code)
@@ -264,6 +272,10 @@ expand_makeflags(int *fargc)
 }
 
 /*
+ * main_startup.inc: macro and environment startup.
+ */
+
+/*
  * Instantiate all macros in an argv-style array of pointers.  Stop
  * processing at the first string that doesn't contain an equal sign.
  * As an extension, target arguments on the command line (level 1)
@@ -426,6 +438,10 @@ update_makeflags(void)
 	}
 }
 
+/*
+ * main_runtime.inc: runtime helpers.
+ */
+
 static void
 make_handler(int sig)
 {
@@ -506,6 +522,10 @@ get_shell(void)
 	free(file);
 	return xstrdup("/bin/sh");
 }
+
+/*
+ * main_entry.inc: program entry.
+ */
 
 int
 main(int argc, char **argv)
