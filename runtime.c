@@ -1,4 +1,4 @@
-#include "make.h"
+#include "make_m2.h"
 
 static void
 make_handler(int sig)
@@ -53,6 +53,7 @@ get_shell(void)
 {
 	size_t len;
 	char *path, *file;
+	const char *p;
 	const char *end;
 	struct stat st;
 
@@ -61,7 +62,7 @@ get_shell(void)
 	confstr(_CS_PATH, path, len);
 	file = xmalloc(len + 3);
 
-    for (const char *p = path; p; p = end) {
+	for (p = path; p; p = end) {
 		end = strchr(p, ':');
 		if (end == NULL)
 			len = strlen(p);

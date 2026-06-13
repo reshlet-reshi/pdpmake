@@ -28,12 +28,18 @@ typedef unsigned int uint32_t;
 #define _XOPEN_SOURCE 700
 #endif
 #include <stddef.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #else
 typedef unsigned long size_t;
 typedef long ssize_t;
 typedef long time_t;
+typedef unsigned long sigset_t;
+typedef void (*pdpmake_sighandler_t)(int);
+
+#define SIG_DFL ((pdpmake_sighandler_t)0)
+#define SIG_IGN ((pdpmake_sighandler_t)1)
 
 struct timespec {
 	long tv_sec;
@@ -41,7 +47,15 @@ struct timespec {
 };
 
 struct stat {
+	long st_mode;
 	struct timespec st_mtim;
+};
+
+struct sigaction {
+	pdpmake_sighandler_t sa_handler;
+	sigset_t sa_mask;
+	int sa_flags;
+	pdpmake_sighandler_t sa_restorer;
 };
 #endif
 
@@ -61,6 +75,25 @@ typedef struct __IO_FILE FILE;
 #define AR_FMAG_LEN 2
 
 #define SEEK_CUR 1
+#ifndef X_OK
+#define X_OK 1
+#endif
+
+#ifndef _CS_PATH
+#define _CS_PATH 0
+#endif
+
+#ifndef S_IFMT
+#define S_IFMT 00170000
+#endif
+
+#ifndef S_IFREG
+#define S_IFREG 0100000
+#endif
+
+#ifndef S_ISREG
+#define S_ISREG(mode) (((mode) & S_IFMT) == S_IFREG)
+#endif
 
 struct ar_hdr {
 	char ar_name[AR_NAME_LEN];
@@ -104,6 +137,7 @@ int fflush(FILE *stream);
 void free(void *ptr);
 int strcmp(const char *s1, const char *s2);
 size_t strlen(const char *str);
+char *strcpy(char *dest, const char *src);
 char *strchr(const char *str, int ch);
 char *strrchr(const char *str, int ch);
 int memcmp(const void *s1, const void *s2, size_t n);
@@ -120,10 +154,19 @@ int feof(FILE *stream);
 int fseek(FILE *stream, long offset, int whence);
 int fclose(FILE *stream);
 int unlink(const char *path);
+int access(const char *path, int mode);
 int open(const char *path, int oflag, ...);
 int close(int fd);
+int kill(int pid, int sig);
+int getpid(void);
 int utimensat(int fd, const char *path, const struct timespec times[2], int flag);
 int clock_gettime(int clk_id, struct timespec *tp);
+size_t confstr(int name, char *buf, size_t len);
+#if defined(__M2__)
+pdpmake_sighandler_t signal(int sig, pdpmake_sighandler_t func);
+int sigemptyset(sigset_t *set);
+int sigaction(int sig, const struct sigaction *act, struct sigaction *oldact);
+#endif
 int system(const char *command);
 void exit(int status);
 void *malloc(size_t size);
