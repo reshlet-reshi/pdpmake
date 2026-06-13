@@ -113,7 +113,7 @@ compare_strings(char *arg1)
  * Process conditional directives and return TRUE if the current line
  * should be skipped.
  */
-static int
+int
 skip_line(const char *str1)
 {
 	char *copy, *q, *token;
@@ -210,4 +210,3 @@ skip_line(const char *str1)
 	return ret;
 }
 #endif
-

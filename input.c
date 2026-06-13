@@ -9,7 +9,6 @@ int dispno;	// Line number for display purposes
 
 #include "input_expand.inc"
 #include "input_condition.inc"
-#include "input_read.inc"
 #include "input_classify.inc"
 #include "input_command.inc"
 

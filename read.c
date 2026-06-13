@@ -1,3 +1,5 @@
+#include "make.h"
+
 /*
  * If fd is NULL read the built-in rules.  Otherwise read from the
  * specified file descriptor.
@@ -13,7 +15,7 @@ make_fgets(char *s, int size, FILE *fd)
  * Backslash-escaped newlines don't terminate the line.
  * Ignore comment lines.  Return NULL on EOF.
  */
-static char *
+char *
 readline(FILE *fd, int want_command)
 {
 	char *p, *str = NULL;
@@ -78,4 +80,3 @@ readline(FILE *fd, int want_command)
 		pos = 0;
 	}
 }
-

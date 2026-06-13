@@ -335,6 +335,7 @@ char *get_shell(void);
 #endif
 char *expand_macros(const char *str, int except_dollar);
 void input(FILE *fd, int ilevel);
+char *readline(FILE *fd, int want_command);
 struct macro *getmp(const char *name);
 void setmacro(const char *name, const char *val, int level);
 void freemacros(void);
@@ -375,6 +376,9 @@ struct file *newfile(char *str, struct file *fphead);
 void freefiles(struct file *fp);
 int is_valid_target(const char *name);
 char *gettok(char **ptr);
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+int skip_line(const char *str1);
+#endif
 void pragmas_from_env(void);
 void pragmas_to_env(void);
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
