@@ -323,6 +323,9 @@ uint32_t process_options(int argc, char **argv, int from_env);
 char **expand_makeflags(int *fargc);
 char **process_macros(char **argv, int level);
 void update_makeflags(void);
+void init_signal(int sig);
+void mark_special(const char *special, uint32_t oflag, uint16_t nflag);
+char *get_shell(void);
 #if !ENABLE_FEATURE_MAKE_POSIX_2024
 #define expand_macros(s, e) expand_macros(s)
 #endif

@@ -1,3 +1,5 @@
+#include "make.h"
+
 static void
 make_handler(int sig)
 {
@@ -6,7 +8,7 @@ make_handler(int sig)
 	kill(getpid(), sig);
 }
 
-static void
+void
 init_signal(int sig)
 {
 	struct sigaction sa, new_action;
@@ -25,7 +27,7 @@ init_signal(int sig)
  * been set mark all prerequisites of the target with a flag.  If the
  * target had no prerequisites set the global option flag.
  */
-static void
+void
 mark_special(const char *special, uint32_t oflag, uint16_t nflag)
 {
 	struct name *np;
@@ -46,7 +48,7 @@ mark_special(const char *special, uint32_t oflag, uint16_t nflag)
 	}
 }
 
-static char *
+char *
 get_shell(void)
 {
 	size_t len;
