@@ -393,6 +393,7 @@ int is_valid_target(const char *name);
 char *gettok(char **ptr);
 char *skip_macro(const char *s);
 char *find_char(const char *str, int c);
+char *find_colon(char *p);
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 int skip_line(const char *str1);
 int ends_with_bracket(const char *s);

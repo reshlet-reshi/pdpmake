@@ -1,3 +1,4 @@
+#include "make.h"
 
 /*
  * Return a pointer to the next blank-delimited word or NULL if
@@ -162,14 +163,14 @@ find_char(const char *str, int c)
 	return NULL;
 }
 
-#if ENABLE_FEATURE_MAKE_EXTENSIONS && defined(__CYGWIN__)
 /*
  * Check for a target rule by searching for a colon that isn't
  * part of a Windows path.  Return a pointer to the colon or NULL.
  */
-static char *
+char *
 find_colon(char *p)
 {
+#if ENABLE_FEATURE_MAKE_EXTENSIONS && defined(__CYGWIN__)
 	char *q;
 
 	for (q = p; (q = strchr(q, ':')); ++q) {
@@ -179,10 +180,10 @@ find_colon(char *p)
 			break;
 	}
 	return q;
-}
 #else
-# define find_colon(s) strchr(s, ':')
+	return strchr(p, ':');
 #endif
+}
 
 /*
  * Recursively expand any macros in str to an allocated string.
