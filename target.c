@@ -287,6 +287,7 @@ static const char *p_name[] = {
 	"target_name",
 	"command_comment",
 	"empty_suffix",
+	"suffix_inference",
 #if defined(__CYGWIN__)
 	"windows",
 #endif

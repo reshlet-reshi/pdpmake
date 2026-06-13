@@ -34,6 +34,8 @@ test: make
 
 m2-check: $(M2_OBJS)
 
+.PRAGMA: suffix_inference
+
 $(M2_OBJS): make_m2.h
 
 .c.m2.o:

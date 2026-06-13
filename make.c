@@ -249,7 +249,7 @@ make1(struct name *np, struct cmd *cp, char *oodate, char *allsrc,
 			prereq = implicit->n_name;
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-		if (!posix && member == NULL) {
+		if ((!posix || (pragma & P_SUFFIX_INFERENCE)) && member == NULL) {
 			// As an extension remove a suffix that doesn't necessarily
 			// start with a period from a target, but not for targets
 			// of the form lib.a(member.o).

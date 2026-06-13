@@ -154,7 +154,7 @@ dyndep(struct name *np, struct rule *infrule, const char **ptsuff)
 	// POSIX only allows inference rules with one or two periods.
 	// As an extension this restriction is lifted, but not for
 	// targets of the form lib.a(member.o).
-	if (!posix && member == NULL) {
+	if ((!posix || (pragma & P_SUFFIX_INFERENCE)) && member == NULL) {
 		struct name *xp = newname(".SUFFIXES");
 		int found_suffix = FALSE;
 

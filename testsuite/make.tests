@@ -640,6 +640,32 @@ x.o.o:
 '
 cd .. || exit 1; rm -rf make.tempdir 2>/dev/null
 
+# Multi-period suffix inference remains an opt-in extension in POSIX mode.
+mkdir make.tempdir && cd make.tempdir || exit 1
+touch check.c
+testing "POSIX rejects multi-period suffix inference without pragma" \
+	"make -f - all 2>/dev/null" "" "" '
+.POSIX:
+.SUFFIXES: .c .m2.o
+all: check.m2.o
+.c.m2.o:
+	@echo $< $@ $*
+'
+cd .. || exit 1; rm -rf make.tempdir 2>/dev/null
+
+mkdir make.tempdir && cd make.tempdir || exit 1
+touch check.c
+testing "Pragma enables multi-period suffix inference in POSIX mode" \
+	"make -f - all" "check.c check.m2.o check\n" "" '
+.POSIX:
+.PRAGMA: suffix_inference
+.SUFFIXES: .c .m2.o
+all: check.m2.o
+.c.m2.o:
+	@echo $< $@ $*
+'
+cd .. || exit 1; rm -rf make.tempdir 2>/dev/null
+
 # Suffixes with no periods are supported
 mkdir make.tempdir && cd make.tempdir || exit 1
 touch filex

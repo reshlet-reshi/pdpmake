@@ -118,7 +118,7 @@ target_type(char *s)
 	// Check for an inference rule
 	ret = T_NORMAL;
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-	if (!posix) {
+	if (!posix || (pragma & P_SUFFIX_INFERENCE)) {
 		if (is_suffix(s) || is_inference_target(s)) {
 			ret = T_INFERENCE | T_NOPREREQ | T_COMMAND;
 		}
