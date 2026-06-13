@@ -7,6 +7,7 @@ PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
 MANDIR = $(PREFIX)/share/man
 
+CC = c99
 OBJS = check.o classify.o command.o condition.o expand.o extensions.o input.o macro.o main.o make.o modtime.o options.o read.o rules.o runtime.o startup.o target.o utils.o
 M2_CC = ../stage0-posix/AMD64/bin/M2-Mesoplanet
 M2_BINDIR = ../stage0-posix/AMD64/bin
