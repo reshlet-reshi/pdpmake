@@ -1,7 +1,3 @@
-/*
- * main_entry.inc: program entry.
- */
-
 int
 main(int argc, char **argv)
 {

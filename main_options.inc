@@ -1,7 +1,3 @@
-/*
- * main_options.inc: option parsing and MAKEFLAGS argv expansion.
- */
-
 static void
 usage(int exit_code)
 {
@@ -228,4 +224,3 @@ expand_makeflags(int *fargc)
 	*fargc = argc;
 	return argv;
 }
-

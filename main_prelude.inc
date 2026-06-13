@@ -1,8 +1,4 @@
 /*
- * main_prelude.inc: prologue and global state.
- */
-
-/*
  * make [--posix] [-C path] [-f makefile] [-j num] [-x pragma]
  *      [-ehiknpqrsSt] [macro[:[:[:]]]=val ...] [target ...]
  *
@@ -39,4 +35,3 @@ bool seen_first;
 unsigned char pragma = 0;
 unsigned char posix_level = DEFAULT_POSIX_LEVEL;
 #endif
-

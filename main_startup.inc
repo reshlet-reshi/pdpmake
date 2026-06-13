@@ -1,8 +1,4 @@
 /*
- * main_startup.inc: macro and environment startup.
- */
-
-/*
  * Instantiate all macros in an argv-style array of pointers.  Stop
  * processing at the first string that doesn't contain an equal sign.
  * As an extension, target arguments on the command line (level 1)
@@ -164,4 +160,3 @@ update_makeflags(void)
 		free(makeflags);
 	}
 }
-

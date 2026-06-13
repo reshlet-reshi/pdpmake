@@ -1,7 +1,3 @@
-/*
- * main_runtime.inc: runtime helpers.
- */
-
 static void
 make_handler(int sig)
 {
@@ -82,4 +78,3 @@ get_shell(void)
 	free(file);
 	return xstrdup("/bin/sh");
 }
-
