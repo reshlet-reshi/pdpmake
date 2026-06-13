@@ -280,7 +280,7 @@ inc_ref(void *vp)
 }
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-// Order must match constants in make.h
+// Order must match constants in make_m2.h
 // POSIX levels must be last and in increasing order
 static const char *p_name[] = {
 	"macro_name",

@@ -1,8 +1,7 @@
 /*
  * Minimal header for compiling selected files with M2-Mesoplanet.
  *
- * M2-Mesoplanet follows include directives before conditional
- * preprocessing, so the full host-oriented make.h is not yet usable.
+ * This is shared by host builds and the M2-Mesoplanet compile probes.
  */
 #ifndef PDPMAKE_MAKE_M2_H
 #define PDPMAKE_MAKE_M2_H

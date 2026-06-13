@@ -15,7 +15,6 @@ M2_OBJS = check.m2.o classify.m2.o command.m2.o condition.m2.o expand.m2.o exten
 make: $(OBJS)
 	$(CC) $(LDFLAGS) -o make $(OBJS)
 
-$(OBJS): make.h
 check.o: make_m2.h
 classify.o: make_m2.h
 command.o: make_m2.h
