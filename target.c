@@ -1,7 +1,7 @@
 /*
  * Process name, rule, command and prerequisite structures
  */
-#include "make.h"
+#include "make_m2.h"
 
 /*
  * Add a prerequisite to the end of the supplied list.
@@ -21,8 +21,9 @@ newdep(struct name *np, struct depend *dphead)
 	if (dphead == NULL)
 		return dpnew;
 
-	for (dp = dphead; dp->d_next; dp = dp->d_next)
-		;
+	dp = dphead;
+	while (dp->d_next)
+		dp = dp->d_next;
 
 	dp->d_next = dpnew;
 
@@ -65,8 +66,9 @@ newcmd(char *str, struct cmd *cphead)
 	if (cphead == NULL)
 		return cpnew;
 
-	for (cp = cphead; cp->c_next; cp = cp->c_next)
-		;
+	cp = cphead;
+	while (cp->c_next)
+		cp = cp->c_next;
 
 	cp->c_next = cpnew;
 
@@ -76,13 +78,17 @@ newcmd(char *str, struct cmd *cphead)
 void
 freecmds(struct cmd *cp)
 {
+	const char *makefile_name;
+	void *makefile_copy;
 	struct cmd *nextcp;
 
 	if (cp && --cp->c_refcnt <= 0) {
 		for (; cp; cp = nextcp) {
 			nextcp = cp->c_next;
 			free(cp->c_cmd);
-			free((void *)cp->c_makefile);
+			makefile_name = cp->c_makefile;
+			makefile_copy = (void *)makefile_name;
+			free(makefile_copy);
 			free(cp);
 		}
 	}
@@ -95,8 +101,10 @@ struct name *
 findname(const char *name)
 {
 	struct name *np;
+	struct name **slot;
 
-	for (np = namehead[getbucket(name)]; np; np = np->n_next) {
+	slot = namehead + getbucket(name);
+	for (np = *slot; np; np = np->n_next) {
 		if (strcmp(name, np->n_name) == 0)
 			return np;
 	}
@@ -109,13 +117,13 @@ check_name(const char *name)
 	const char *s;
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-# if defined(__CYGWIN__)
+#if defined(__CYGWIN__)
 	if (!posix || (pragma & P_WINDOWS)) {
 		if (isalpha(name[0]) && name[1] == ':' && name[2] == '/') {
 			name += 3;
 		}
 	}
-# endif
+#endif
 	if (!posix) {
 		for (s = name; *s; ++s) {
 			if (*s == '=')
@@ -135,8 +143,12 @@ check_name(const char *name)
 #else
 				FALSE
 #endif
-			) ? !(isfname(*s) || *s == '/') : !ispname(*s))
+			)) {
+			if (!(isfname(*s) || *s == '/'))
+				return FALSE;
+		} else if (!ispname(*s)) {
 			return FALSE;
+		}
 	}
 	return TRUE;
 }
@@ -181,24 +193,27 @@ newname(const char *name)
 	struct name *np = findname(name);
 
 	if (np == NULL) {
-		unsigned int bucket;
+		struct name **slot;
 
-		if (!is_valid_target(name))
+		if (!is_valid_target(name)) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-			error("invalid target name '%s'%s", name,
-					potentially_valid_target(name) ?
-						": allow with pragma target_name" : "");
+			if (potentially_valid_target(name))
+				error("invalid target name '%s': allow with pragma target_name", name);
+			else
+				error("invalid target name '%s'", name);
 #else
 			error("invalid target name '%s'", name);
 #endif
+		}
 
-		bucket = getbucket(name);
+		slot = namehead + getbucket(name);
 		np = xmalloc(sizeof(struct name));
-		np->n_next = namehead[bucket];
-		namehead[bucket] = np;
+		np->n_next = *slot;
+		*slot = np;
 		np->n_name = xstrdup(name);
 		np->n_rule = NULL;
-		np->n_tim = (struct timespec){0, 0};
+		np->n_tim.tv_sec = 0;
+		np->n_tim.tv_nsec = 0;
 		np->n_flag = 0;
 	}
 	return np;
@@ -277,7 +292,8 @@ static const char *p_name[] = {
 #endif
 	"posix_2017",
 	"posix_2024",
-	"posix_202x"
+	"posix_202x",
+	NULL
 };
 
 void
@@ -286,7 +302,7 @@ set_pragma(const char *name)
 	int i;
 
 	// posix_202x is an alias for posix_2024
-	for (i = 0; i < sizeof(p_name)/sizeof(p_name[0]); ++i) {
+	for (i = 0; p_name[i] != NULL; ++i) {
 		if (strcmp(name, p_name[i]) == 0) {
 #if !ENABLE_FEATURE_MAKE_POSIX_2024
 			if (i == BIT_POSIX_2024 || i == BIT_POSIX_202X) {

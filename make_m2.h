@@ -69,6 +69,9 @@ struct ar_hdr {
 
 #define STD_POSIX_2017 0
 #define STD_POSIX_2024 1
+#ifndef DEFAULT_POSIX_LEVEL
+#define DEFAULT_POSIX_LEVEL STD_POSIX_2024
+#endif
 #define READLINE_CHUNK 256
 
 #ifndef ENABLE_FEATURE_MAKE_EXTENSIONS
@@ -159,6 +162,8 @@ pdpmake_isalpha(int c)
 	return pdpmake_islower(c) || pdpmake_isupper(c);
 }
 
+#define isalpha(c) pdpmake_isalpha(c)
+
 static int
 pdpmake_isdigit(int c)
 {
@@ -171,6 +176,13 @@ static int
 isblank(int c)
 {
 	return c == ' ' || c == '\t';
+}
+
+static int
+isspace(int c)
+{
+	return c == ' ' || c == '\t' || c == '\n' || c == '\r'
+			|| c == '\f' || c == '\v';
 }
 
 static int
@@ -198,11 +210,13 @@ isfname(int c)
 #endif
 #define N_DOING 0x01
 #define N_TARGET 0x04
+#define N_SPECIAL 0x80
 #if ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024
 #define N_MARK 0x100
 #else
 #define N_MARK 0x00
 #endif
+#define N_INFERENCE 0x400
 #define HTABSIZE 199
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
@@ -219,7 +233,25 @@ isfname(int c)
 #define M_ENVIRON 0x20
 
 #define BIT_MACRO_NAME 0
-#define P_MACRO_NAME 1
+#define BIT_TARGET_NAME 1
+#define BIT_COMMAND_COMMENT 2
+#define BIT_EMPTY_SUFFIX 3
+#if defined(__CYGWIN__)
+#define BIT_WINDOWS 4
+#define BIT_POSIX_2017 5
+#define BIT_POSIX_2024 6
+#define BIT_POSIX_202X 7
+#define P_WINDOWS (1 << BIT_WINDOWS)
+#else
+#define BIT_POSIX_2017 4
+#define BIT_POSIX_2024 5
+#define BIT_POSIX_202X 6
+#endif
+
+#define P_MACRO_NAME (1 << BIT_MACRO_NAME)
+#define P_TARGET_NAME (1 << BIT_TARGET_NAME)
+#define P_COMMAND_COMMENT (1 << BIT_COMMAND_COMMENT)
+#define P_EMPTY_SUFFIX (1 << BIT_EMPTY_SUFFIX)
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 #define PDPMAKE_CHECK_MACRO_NAME posix
@@ -335,5 +367,15 @@ struct name *findname(const char *name);
 struct name *newname(const char *name);
 struct depend *newdep(struct name *np, struct depend *dp);
 char *getrules(char *buf, int buf_sz);
+struct cmd *newcmd(char *str, struct cmd *cphead);
+void freecmds(struct cmd *cp);
+void freedeps(struct depend *dp);
+void freerules(struct rule *rp);
+struct cmd *getcmd(struct name *np);
+void addrule(struct name *np, struct depend *dp, struct cmd *cp, int flag);
+void set_pragma(const char *name);
+void pragmas_to_env(void);
+int is_valid_target(const char *name);
+int setenv(const char *name, const char *value, int overwrite);
 
 #endif
