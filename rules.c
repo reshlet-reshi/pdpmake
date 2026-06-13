@@ -1,7 +1,7 @@
 /*
  * Control of the implicit suffix rules
  */
-#include "make.h"
+#include "make_m2.h"
 
 /*
  * Return a pointer to the suffix of a name (which may be the
@@ -11,7 +11,9 @@ char *
 suffix(const char *name)
 {
 	char *p = strrchr(name, '.');
-	return p ? p : (char *)name + strlen(name);
+	if (p)
+		return p;
+	return (char *)name + strlen(name);
 }
 
 /*
@@ -25,7 +27,10 @@ namecat(const char *s, const char *t, int create)
 	struct name *np;
 
 	p = xconcat3(s, t, "");
-	np = create ? newname(p) : findname(p);
+	if (create)
+		np = newname(p);
+	else
+		np = findname(p);
 	free(p);
 	return np;
 }
@@ -43,7 +48,11 @@ dyndep0(char *base, const char *tsuff, struct rule *infrule)
 	struct name *sp;		// Suffix rule
 	struct rule *rp;
 	struct depend *dp;
-	IF_NOT_FEATURE_MAKE_EXTENSIONS(const) bool chain = FALSE;
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+	bool chain = FALSE;
+#else
+	const bool chain = FALSE;
+#endif
 
 	xp = newname(".SUFFIXES");
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
@@ -135,7 +144,7 @@ struct name *
 dyndep(struct name *np, struct rule *infrule, const char **ptsuff)
 {
 	const char *tsuff;
-	char *base, *name, *member;
+	char *base, *base_suffix, *name, *member;
 	struct name *pp = NULL;	// Implicit prerequisite
 
 	member = NULL;
@@ -179,8 +188,12 @@ dyndep(struct name *np, struct rule *infrule, const char **ptsuff)
 #endif
 	{
 		tsuff = xstrdup(suffix(name));
-		base = member ? member : name;
-		*suffix(base) = '\0';
+		if (member)
+			base = member;
+		else
+			base = name;
+		base_suffix = suffix(base);
+		*base_suffix = '\0';
 
 		pp = dyndep0(base, tsuff, infrule);
 		free((void *)tsuff);
@@ -306,7 +319,10 @@ getrules(char *buf, int buf_sz)
 
 		if (!norules) {
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-			tail_blocks[1] = POSIX_2017 ? rules_2017 : rules_2024;
+			if (POSIX_2017)
+				tail_blocks[1] = rules_2017;
+			else
+				tail_blocks[1] = rules_2024;
 #elif ENABLE_FEATURE_MAKE_POSIX_2024
 			tail_blocks[1] = rules_2024;
 #else

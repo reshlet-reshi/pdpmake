@@ -10,6 +10,7 @@
 typedef unsigned char bool;
 typedef unsigned char uint8_t;
 typedef unsigned short uint16_t;
+typedef unsigned int uint32_t;
 
 #define NULL 0
 #define TRUE 1
@@ -22,9 +23,11 @@ typedef unsigned short uint16_t;
 #define _XOPEN_SOURCE 700
 #endif
 #include <stddef.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #else
 typedef unsigned long size_t;
+typedef long ssize_t;
 typedef long time_t;
 
 struct timespec {
@@ -66,6 +69,7 @@ struct ar_hdr {
 
 #define STD_POSIX_2017 0
 #define STD_POSIX_2024 1
+#define READLINE_CHUNK 256
 
 #ifndef ENABLE_FEATURE_MAKE_EXTENSIONS
 #define ENABLE_FEATURE_MAKE_EXTENSIONS 1
@@ -91,6 +95,7 @@ void free(void *ptr);
 int strcmp(const char *s1, const char *s2);
 size_t strlen(const char *str);
 char *strchr(const char *str, int ch);
+char *strrchr(const char *str, int ch);
 int memcmp(const void *s1, const void *s2, size_t n);
 void *memcpy(void *dest, const void *src, size_t n);
 char *strerror(int errnum);
@@ -191,7 +196,23 @@ isfname(int c)
 #else
 #define N_DOUBLE 0x00
 #endif
+#define N_DOING 0x01
+#define N_TARGET 0x04
+#if ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024
+#define N_MARK 0x100
+#else
+#define N_MARK 0x00
+#endif
 #define HTABSIZE 199
+
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
+#define OPT_r (1 << 7)
+#elif ENABLE_FEATURE_MAKE_POSIX_2024
+#define OPT_r (1 << 6)
+#else
+#define OPT_r (1 << 5)
+#endif
+#define norules (opts & OPT_r)
 
 #define M_IMMEDIATE 0x08
 #define M_VALID 0x10
@@ -290,6 +311,7 @@ struct file {
 extern struct name *namehead[HTABSIZE];
 extern struct macro *macrohead[HTABSIZE];
 extern struct name *firstname;
+extern uint32_t opts;
 extern const char *myname;
 extern const char *makefile;
 extern int dispno;
@@ -298,7 +320,20 @@ extern bool posix;
 extern unsigned char pragma;
 extern unsigned char posix_level;
 
+#if !ENABLE_FEATURE_MAKE_EXTENSIONS
+#define dyndep(n, i, p) dyndep(n, i)
+#endif
+
 struct file *newfile(char *str, struct file *fphead);
 void freefiles(struct file *fp);
+char *splitlib(const char *name, char **member);
+void modtime(struct name *np);
+char *suffix(const char *name);
+char *has_suffix(const char *name, const char *suffix);
+struct name *dyndep(struct name *np, struct rule *infrule, const char **ptsuff);
+struct name *findname(const char *name);
+struct name *newname(const char *name);
+struct depend *newdep(struct name *np, struct depend *dp);
+char *getrules(char *buf, int buf_sz);
 
 #endif
