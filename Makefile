@@ -15,24 +15,7 @@ M2_OBJS = check.m2.o classify.m2.o command.m2.o condition.m2.o expand.m2.o exten
 make: $(OBJS)
 	$(CC) $(LDFLAGS) -o make $(OBJS)
 
-check.o: make_m2.h
-classify.o: make_m2.h
-command.o: make_m2.h
-condition.o: make_m2.h
-expand.o: make_m2.h
-extensions.o: make_m2.h
-input.o: make_m2.h
-macro.o: make_m2.h
-main.o: make_m2.h
-make.o: make_m2.h
-modtime.o: make_m2.h
-options.o: make_m2.h
-read.o: make_m2.h
-rules.o: make_m2.h
-runtime.o: make_m2.h
-startup.o: make_m2.h
-target.o: make_m2.h
-utils.o: make_m2.h
+$(OBJS): make_m2.h
 
 install: make
 	test -d $(DESTDIR)$(BINDIR) || mkdir -p $(DESTDIR)$(BINDIR)
