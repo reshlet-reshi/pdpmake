@@ -298,6 +298,7 @@ extern struct name *namehead[HTABSIZE];
 extern struct macro *macrohead[HTABSIZE];
 extern struct name *firstname;
 extern struct name *target;
+extern struct file *makefiles;
 extern uint32_t opts;
 extern int lineno;
 extern int dispno;
@@ -318,6 +319,8 @@ extern unsigned char posix_level;
 #define isfname(c) (ispname(c) || c == '-')
 
 void print_details(void);
+uint32_t process_options(int argc, char **argv, int from_env);
+char **expand_makeflags(int *fargc);
 #if !ENABLE_FEATURE_MAKE_POSIX_2024
 #define expand_macros(s, e) expand_macros(s)
 #endif

@@ -1,3 +1,5 @@
+#include "make.h"
+
 static void
 usage(int exit_code)
 {
@@ -55,7 +57,7 @@ usage(int exit_code)
  * Process options from an argv array.  If from_env is non-zero we're
  * handling options from MAKEFLAGS so skip '-C', '-f', '-p' and '-x'.
  */
-static uint32_t
+uint32_t
 process_options(int argc, char **argv, int from_env)
 {
 	int opt;
@@ -162,7 +164,7 @@ process_options(int argc, char **argv, int from_env)
  * value (call it fargv) isn't NULL the caller should free fargv[1] and
  * fargv.
  */
-static char **
+char **
 expand_makeflags(int *fargc)
 {
 	const char *m, *makeflags = getenv("MAKEFLAGS");
