@@ -267,6 +267,14 @@ struct file {
 
 #define HTABSIZE 199
 
+enum {
+	T_NORMAL    =  0,
+	T_SPECIAL   = (1 << 0),
+	T_INFERENCE = (1 << 1), // Inference rule
+	T_NOPREREQ  = (1 << 2), // If set must not have prerequisites
+	T_COMMAND   = (1 << 3), // If set must have commands, if unset must not
+};
+
 // Constants for PRAGMA.  Order must match strings in set_pragma().
 enum {
 	BIT_MACRO_NAME = 0,
@@ -351,6 +359,7 @@ char *suffix(const char *name);
 const char *is_suffix(const char *s);
 char *has_suffix(const char *name, const char *suffix);
 struct name *dyndep(struct name *np, struct rule *infrule, const char **ptsuff);
+int target_type(char *s);
 char *getrules(char *s, int size);
 struct name *findname(const char *name);
 struct name *newname(const char *name);
@@ -383,6 +392,7 @@ char *gettok(char **ptr);
 char *skip_macro(const char *s);
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
 int skip_line(const char *str1);
+int ends_with_bracket(const char *s);
 #endif
 void pragmas_from_env(void);
 void pragmas_to_env(void);

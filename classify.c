@@ -1,3 +1,5 @@
+#include "make.h"
+
 /*
  * Return a pointer to the suffix name if the argument is a known suffix
  * or NULL if it isn't.
@@ -25,7 +27,7 @@ is_suffix(const char *s)
  * Return TRUE if the argument is formed by concatenating two
  * known suffixes.
  */
-int
+static int
 is_inference_target(const char *s)
 {
 	struct name *np;
@@ -54,19 +56,11 @@ is_inference_target(const char *s)
 }
 #endif
 
-enum {
-	T_NORMAL    =  0,
-	T_SPECIAL   = (1 << 0),
-	T_INFERENCE = (1 << 1), // Inference rule
-	T_NOPREREQ  = (1 << 2), // If set must not have prerequisites
-	T_COMMAND   = (1 << 3), // If set must have commands, if unset must not
-};
-
 /*
  * Determine if the argument is a special target and return a set
  * of flags indicating its properties.
  */
-static int
+int
 target_type(char *s)
 {
 	int ret;
@@ -137,11 +131,10 @@ target_type(char *s)
 }
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-static int
+int
 ends_with_bracket(const char *s)
 {
 	const char *t = strrchr(s, ')');
 	return t && t[1] == '\0';
 }
 #endif
-
