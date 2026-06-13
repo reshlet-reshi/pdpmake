@@ -1,6 +1,7 @@
 # Makefile for make!
 .POSIX:
 .PHONY: install uninstall test m2-check clean
+.SUFFIXES: .c .m2.o
 
 PREFIX = /usr/local
 BINDIR = $(PREFIX)/bin
@@ -32,59 +33,10 @@ test: make
 
 m2-check: $(M2_OBJS)
 
-check.m2.o: check.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f check.c -o $@
+$(M2_OBJS): make_m2.h
 
-classify.m2.o: classify.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f classify.c -o $@
-
-command.m2.o: command.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f command.c -o $@
-
-condition.m2.o: condition.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f condition.c -o $@
-
-expand.m2.o: expand.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f expand.c -o $@
-
-extensions.m2.o: extensions.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f extensions.c -o $@
-
-input.m2.o: input.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f input.c -o $@
-
-macro.m2.o: macro.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f macro.c -o $@
-
-main.m2.o: main.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f main.c -o $@
-
-make.m2.o: make.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f make.c -o $@
-
-modtime.m2.o: modtime.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f modtime.c -o $@
-
-options.m2.o: options.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f options.c -o $@
-
-read.m2.o: read.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f read.c -o $@
-
-rules.m2.o: rules.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f rules.c -o $@
-
-runtime.m2.o: runtime.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f runtime.c -o $@
-
-startup.m2.o: startup.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f startup.c -o $@
-
-target.m2.o: target.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f target.c -o $@
-
-utils.m2.o: utils.c make_m2.h
-	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f utils.c -o $@
+.c.m2.o:
+	PATH=$(M2_BINDIR):$$PATH M2LIBC_PATH=$(M2LIBC_PATH) $(M2_CC) -c -f $< -o $@
 
 clean:
 	rm -f $(OBJS) $(M2_OBJS) make
