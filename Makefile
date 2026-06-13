@@ -17,8 +17,8 @@ make: $(OBJS)
 
 $(OBJS): make.h
 check.o: make_m2.h
-input.o: input_prelude.inc input_expand.inc input_condition.inc input_read.inc \
-	input_classify.inc input_command.inc input_extensions.inc input_parser.inc
+input.o: input_expand.inc input_condition.inc input_read.inc \
+	input_classify.inc input_command.inc input_extensions.inc
 macro.o: make_m2.h
 main.o: make_m2.h
 make.o: make_m2.h
