@@ -1,4 +1,4 @@
-#include "make.h"
+#include "make_m2.h"
 
 /*
  * Return a pointer to the next blank-delimited word or NULL if
@@ -21,8 +21,10 @@ gettok(char **ptr)
 		(*ptr)++;	// Find end of word
 
 	// Terminate token and move on unless already at end of string
-	if (**ptr != '\0')
-		*(*ptr)++ = '\0';
+	if (**ptr != '\0') {
+		**ptr = '\0';
+		(*ptr)++;
+	}
 
 	return(p);
 }
@@ -35,7 +37,13 @@ skip_macro(const char *s)
 {
 	while (*s && s[0] == '$') {
 		if (s[1] == '(' || s[1] == '{') {
-			char end = *++s == '(' ? ')' : '}';
+			char end;
+
+			++s;
+			if (*s == '(')
+				end = ')';
+			else
+				end = '}';
 			while (*s && *s != end)
 				s = skip_macro(s + 1);
 			if (*s == end)
@@ -49,10 +57,6 @@ skip_macro(const char *s)
 	return (char *)s;
 }
 
-#if !ENABLE_FEATURE_MAKE_POSIX_2024
-# define modify_words(v, m, lf, lr, fp, rp, fs, rs) \
-			modify_words(v, m, lf, lr, fs, rs)
-#endif
 /*
  * Process each whitespace-separated word in the input string:
  *
@@ -102,8 +106,7 @@ modify_words(const char *val, int modifier, size_t lenf, size_t lenr,
 				word = sep + 1;
 			}
 		}
-		if (IF_FEATURE_MAKE_POSIX_2024(find_pref != NULL ||)
-				lenf != 0 || lenr != 0) {
+		if (find_pref != NULL || lenf != 0 || lenr != 0) {
 			size_t lenw = strlen(word);
 #if ENABLE_FEATURE_MAKE_POSIX_2024
 			// This code implements pattern macro expansions:
@@ -194,9 +197,7 @@ expand_macros(const char *str, int except_dollar)
 	char *exp, *newexp, *s, *t, *p, *q, *name;
 	char *find, *replace, *modified;
 	char *expval, *expfind, *find_suff, *repl_suff;
-#if ENABLE_FEATURE_MAKE_POSIX_2024
 	char *find_pref = NULL, *repl_pref = NULL;
-#endif
 	size_t lenf, lenr;
 	char modifier;
 	struct macro *mp;
@@ -218,7 +219,13 @@ expand_macros(const char *str, int except_dollar)
 			s = t;
 			t++;
 			if (*t == '{' || *t == '(') {
-				t = find_char(t, *t == '{' ? '}' : ')');
+				int end;
+
+				if (*t == '{')
+					end = '}';
+				else
+					end = ')';
+				t = find_char(t, end);
 				if (t == NULL)
 					error("unterminated variable '%s'", s);
 				name = xstrndup(s + 2, t - s - 2);
@@ -252,12 +259,14 @@ expand_macros(const char *str, int except_dollar)
 					} else
 #endif
 					{
-						if (IF_FEATURE_MAKE_EXTENSIONS(posix &&
-									!(pragma & P_EMPTY_SUFFIX) &&)
-								lenf == 0)
-							error("empty suffix%s",
-								!ENABLE_FEATURE_MAKE_EXTENSIONS ? "" :
+						if (lenf == 0) {
+							if (!ENABLE_FEATURE_MAKE_EXTENSIONS) {
+								error("empty suffix%s", "");
+							} else if (posix && !(pragma & P_EMPTY_SUFFIX)) {
+								error("empty suffix%s",
 									": allow with pragma empty_suffix");
+							}
+						}
 						find_suff = expfind;
 						repl_suff = replace;
 						lenr = strlen(repl_suff);
@@ -282,17 +291,21 @@ expand_macros(const char *str, int except_dollar)
 			// The internal macros support 'D' and 'F' modifiers
 			modifier = '\0';
 			switch (name[0]) {
-#if ENABLE_FEATURE_MAKE_POSIX_2024
 			case '^':
 			case '+':
-				if (POSIX_2017)
+				if (!ENABLE_FEATURE_MAKE_POSIX_2024 || POSIX_2017)
 					break;
 				// fall through
-#endif
-			case '@': case '%': case '?': case '<': case '*':
-				if ((name[1] == 'D' || name[1] == 'F') && name[2] == '\0') {
-					modifier = name[1];
-					name[1] = '\0';
+			case '@':
+			case '%':
+			case '?':
+			case '<':
+			case '*':
+				if (name[2] == '\0') {
+					if (name[1] == 'D' || name[1] == 'F') {
+						modifier = name[1];
+						name[1] = '\0';
+					}
 				}
 				break;
 			}

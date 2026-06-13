@@ -152,6 +152,8 @@ struct ar_hdr {
 #define POSIX_2017 (posix && posix_level == STD_POSIX_2017)
 #elif ENABLE_FEATURE_MAKE_POSIX_2024
 #define POSIX_2017 FALSE
+#else
+#define POSIX_2017 FALSE
 #endif
 
 int printf(const char *format, ...);
@@ -661,6 +663,7 @@ char *expand_macros(const char *str, int except_dollar);
 char *gettok(char **ptr);
 char *skip_macro(const char *s);
 char *find_char(const char *str, int c);
+char *find_colon(char *p);
 struct macro *getmp(const char *name);
 void setmacro(const char *name, const char *val, int level);
 const char *is_suffix(const char *s);
