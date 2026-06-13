@@ -1,4 +1,4 @@
-#include "make.h"
+#include "make_m2.h"
 
 /*
  * Instantiate all macros in an argv-style array of pointers.  Stop
@@ -33,7 +33,7 @@ process_macros(char **argv, int level)
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS || ENABLE_FEATURE_MAKE_POSIX_2024
 		if (equal - 1 > *argv && equal[-1] == ':') {
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 			if (equal - 2 > *argv && equal[-2] == ':') {
 				if (POSIX_2017)
 					error("invalid macro assignment");
@@ -50,17 +50,17 @@ process_macros(char **argv, int level)
 				}
 				*colon = '\0';
 			} else
-# endif
+#endif
 			{
-# if ENABLE_FEATURE_MAKE_EXTENSIONS
+#if ENABLE_FEATURE_MAKE_EXTENSIONS
 				if (posix)
 					error("invalid macro assignment");
 				colon = equal - 1;
 				immediate = M_IMMEDIATE;
 				*colon = '\0';
-# else
+#else
 				error("invalid macro assignment");
-# endif
+#endif
 			}
 		} else
 #endif
@@ -108,11 +108,15 @@ void
 update_makeflags(void)
 {
 	int i;
-	char optbuf[] = "-?";
+	char optbuf[3];
 	char *makeflags = NULL;
 	char *macro, *s;
 	const char *t;
 	struct macro *mp;
+
+	optbuf[0] = '-';
+	optbuf[1] = '?';
+	optbuf[2] = '\0';
 
 	t = OPTSTR1 + 1;
 	for (i = 0; *t; t++) {

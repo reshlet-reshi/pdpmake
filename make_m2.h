@@ -138,6 +138,7 @@ void free(void *ptr);
 int strcmp(const char *s1, const char *s2);
 size_t strlen(const char *str);
 char *strcpy(char *dest, const char *src);
+char *stpcpy(char *dest, const char *src);
 char *strchr(const char *str, int ch);
 char *strrchr(const char *str, int ch);
 int memcmp(const void *s1, const void *s2, size_t n);
@@ -309,6 +310,7 @@ pdpmake_wtermsig(int status)
 #define HTABSIZE 199
 
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
+#define OPTSTR1 "+ehij:knqrsSt"
 #define OPT_e (1 << 0)
 #define OPT_h (1 << 1)
 #define OPT_i (1 << 2)
@@ -348,6 +350,7 @@ pdpmake_wtermsig(int status)
 #define OPT_make 0
 #endif
 #elif ENABLE_FEATURE_MAKE_POSIX_2024
+#define OPTSTR1 "+eij:knqrsSt"
 #define OPT_e (1 << 0)
 #define OPT_h 0
 #define OPT_i (1 << 1)
@@ -368,6 +371,7 @@ pdpmake_wtermsig(int status)
 #define OPT_include (1 << 14)
 #define OPT_make (1 << 15)
 #else
+#define OPTSTR1 "+eiknqrsSt"
 #define OPT_e (1 << 0)
 #define OPT_h 0
 #define OPT_i (1 << 1)
@@ -389,6 +393,9 @@ pdpmake_wtermsig(int status)
 #define OPT_make 0
 #endif
 
+#define OPT_MASK (~OPT_S)
+
+#define useenv (opts & OPT_e)
 #define ignore (opts & OPT_i)
 #define errcont (opts & OPT_k)
 #define dryrun (opts & OPT_n)
@@ -525,12 +532,17 @@ extern const char *myname;
 extern const char *makefile;
 extern int dispno;
 extern struct cmd *curr_cmd;
+extern char *numjobs;
 extern bool posix;
 extern unsigned char pragma;
 extern unsigned char posix_level;
 
 #if !ENABLE_FEATURE_MAKE_EXTENSIONS
 #define dyndep(n, i, p) dyndep(n, i)
+#endif
+
+#if !ENABLE_FEATURE_MAKE_POSIX_2024
+#define expand_macros(s, e) expand_macros(s)
 #endif
 
 struct file *newfile(char *str, struct file *fphead);
