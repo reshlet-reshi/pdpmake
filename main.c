@@ -19,7 +19,7 @@
  *  -S  Stop on error
  *  -t  Touch files instead of making them
  */
-#include "make.h"
+#include "make_m2.h"
 
 uint32_t opts;
 const char *myname;
@@ -75,7 +75,7 @@ main(int argc, char **argv)
 			// Make relative path absolute
 			path = newpath = realpath(argv[0], NULL);
 			if (!path) {
-				error("can't resolve path for %s: %s", argv[0], strerror(errno));
+				error("can't resolve path for %s: %s", argv[0], strerror(PDPMAKE_ERRNO));
 			}
 		}
 	} else {
@@ -89,7 +89,7 @@ main(int argc, char **argv)
 		opts = process_options(fargc, fargv, TRUE);
 		fargv = fargv0 + optind;
 		// Reset getopt(3) so we can call it again
-		GETOPT_RESET();
+		getopt_reset();
 	}
 
 	// Process options from the command line
@@ -151,7 +151,7 @@ main(int argc, char **argv)
 				setmacro("CURDIR", cwd, 4);
 				break;
 			}
-		} while (errno == ERANGE);
+		} while (PDPMAKE_ERRNO == ERANGE);
 		free(cwd);
 	}
 	free((void *)newpath);
@@ -159,17 +159,22 @@ main(int argc, char **argv)
 
 	fp = makefiles;
 	if (!fp) {	// Look for a default Makefile
+		ifd = NULL;
 #if ENABLE_FEATURE_MAKE_EXTENSIONS
-		if (!posix && (ifd = fopen("PDPmakefile", "r")) != NULL)
-			makefile = "PDPmakefile";
-		else
+		if (!posix) {
+			ifd = fopen("PDPmakefile", "r");
+			if (ifd != NULL)
+				makefile = "PDPmakefile";
+		}
 #endif
-		if ((ifd = fopen("makefile", "r")) != NULL)
-			makefile = "makefile";
-		else if ((ifd = fopen("Makefile", "r")) != NULL)
-			makefile = "Makefile";
-		else
-			error("no makefile found");
+		if (ifd == NULL) {
+			if ((ifd = fopen("makefile", "r")) != NULL)
+				makefile = "makefile";
+			else if ((ifd = fopen("Makefile", "r")) != NULL)
+				makefile = "Makefile";
+			else
+				error("no makefile found");
+		}
 		goto read_makefile;
 	}
 
@@ -179,7 +184,7 @@ main(int argc, char **argv)
 			makefile = "stdin";
 		} else {
 			if ((ifd = fopen(fp->f_name, "r")) == NULL)
-				error("can't open %s: %s", fp->f_name, strerror(errno));
+				error("can't open %s: %s", fp->f_name, strerror(PDPMAKE_ERRNO));
 			makefile = fp->f_name;
 		}
 		fp = fp->f_next;
@@ -205,8 +210,10 @@ main(int argc, char **argv)
 #endif
 	{
 		// In POSIX mode only targets should now be in argv.
+		char **a;
+
 		found_target = FALSE;
-		for (char **a = argv; *a; a++) {
+		for (a = argv; *a; a++) {
 			if (!strchr(*a, '='))
 				found_target = TRUE;
 			else if (found_target)
@@ -232,9 +239,9 @@ main(int argc, char **argv)
 	}
 
 #if ENABLE_FEATURE_CLEAN_UP
-# if ENABLE_FEATURE_MAKE_POSIX_2024
+#if ENABLE_FEATURE_MAKE_POSIX_2024
 	free((void *)numjobs);
-# endif
+#endif
 	freenames();
 	freemacros();
 	freefiles(makefiles);

@@ -15,13 +15,21 @@ typedef unsigned int uint32_t;
 #define NULL 0
 #define TRUE 1
 #define FALSE 0
+#define EXIT_FAILURE 1
 #define INT_MAX 2147483647
 #define ENOENT 2
+#define ERANGE 34
 #define O_RDWR 2
 #define O_CREAT 64
 #define AT_FDCWD -100
 #define UTIME_NOW 1073741823
 #define CLOCK_REALTIME 0
+#ifndef SIGHUP
+#define SIGHUP 1
+#endif
+#ifndef SIGTERM
+#define SIGTERM 15
+#endif
 
 #if !defined(__M2__)
 #ifndef _XOPEN_SOURCE
@@ -147,6 +155,7 @@ void *memcpy(void *dest, const void *src, size_t n);
 char *strerror(int errnum);
 extern FILE *stdout;
 extern FILE *stderr;
+extern FILE *stdin;
 int fprintf(FILE *stream, const char *format, ...);
 int vfprintf(FILE *stream, const char *format, va_list arg);
 int fputc(int c, FILE *stream);
@@ -166,9 +175,13 @@ int clock_gettime(int clk_id, struct timespec *tp);
 size_t confstr(int name, char *buf, size_t len);
 char *getenv(const char *name);
 int chdir(const char *path);
+char *getcwd(char *buf, size_t size);
+char *realpath(const char *path, char *resolved_path);
+char *basename(char *path);
 int getopt(int argc, char **argv, const char *optstring);
 extern char *optarg;
 extern int optind;
+extern char **environ;
 #if defined(__M2__)
 pdpmake_sighandler_t signal(int sig, pdpmake_sighandler_t func);
 int sigemptyset(sigset_t *set);
@@ -416,6 +429,23 @@ pdpmake_wtermsig(int status)
 #define OPT_OFFSET
 #endif
 
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
+extern int optreset;
+#endif
+
+static void
+getopt_reset(void)
+{
+#if defined(__APPLE__) || defined(__FreeBSD__) || defined(__NetBSD__)
+	optind = 1;
+	optreset = 1;
+#elif defined(__sun__)
+	optind = 1;
+#else
+	optind = 0;
+#endif
+}
+
 #define OPT_MASK (~OPT_S)
 
 #define useenv (opts & OPT_e)
@@ -595,5 +625,17 @@ int make(struct name *np, int level);
 char *expand_macros(const char *str, int except_dollar);
 void setmacro(const char *name, const char *val, int level);
 const char *is_suffix(const char *s);
+void pragmas_from_env(void);
+uint32_t process_options(int argc, char **argv, int from_env);
+char **expand_makeflags(int *fargc);
+char **process_macros(char **argv, int level);
+void update_makeflags(void);
+void init_signal(int sig);
+char *get_shell(void);
+void input(FILE *ifd, int builtin);
+void print_details(void);
+void mark_special(const char *special, uint32_t oflag, uint16_t nflag);
+void freenames(void);
+void freemacros(void);
 
 #endif
